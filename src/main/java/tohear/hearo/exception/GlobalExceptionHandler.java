@@ -1,5 +1,9 @@
+package tohear.hearo.exception;
+
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+import tohear.hearo.global.Result;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {

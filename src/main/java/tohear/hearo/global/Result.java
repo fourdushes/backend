@@ -1,3 +1,5 @@
+package tohear.hearo.global;
+
 import lombok.Getter;
 
 @Getter
