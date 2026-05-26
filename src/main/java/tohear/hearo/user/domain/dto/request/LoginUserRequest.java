@@ -1,3 +1,5 @@
+package tohear.hearo.user.domain.dto.request;
+
 import lombok.Data;
 
 @Data

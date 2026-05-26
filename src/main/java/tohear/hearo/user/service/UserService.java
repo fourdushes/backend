@@ -1,7 +1,15 @@
+package tohear.hearo.user.service;
+
+import java.util.List;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
+import tohear.hearo.global.JwtTokenProvider;
+import tohear.hearo.user.domain.User;
+import tohear.hearo.user.domain.dto.response.LoginUserResponse;
+import tohear.hearo.user.repository.UserRepository;
 
 @Service
 @Transactional(readOnly = true)
@@ -9,10 +17,11 @@ import lombok.RequiredArgsConstructor;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final JwtTokenProvider tokenProvider;
 
     @Transactional
     public String join(User user) { // 회원 가입
-        valiodateDuplicateUser(user.getId());
+        validateDuplicateUser(user.getId());
         userRepository.save(user);
         return user.getId();
     }
@@ -30,18 +39,20 @@ public class UserService {
         return userRepository.findIdByNameAndEmail(name, email);
     }
 
-    public void validateLogin(String id, String password) {
+    public LoginUserResponse validateLogin(String id, String password) { // 로그인 검증
         User user = userRepository.findById(id).orElseThrow(
             () -> new IllegalArgumentException("아이디가 옳바르지 않습니다. " + id));
         
         if (!user.getPassword().equals(password)) {
             throw new IllegalArgumentException("비밀번호가 옳바르지 않습니다.");
         }
+
+        String token = tokenProvider.createToken(user.getId());
+        return new LoginUserResponse(token, user.getId());
     }
 
     public void validateDuplicateUser(String id) { // 중복 회원 검증
-        User user = userRepository.findById(id);
-        if (user != null) {
+        if (userRepository.findById(id).isPresent()) {
             throw new IllegalStateException("이미 존재하는 회원입니다.");
         }
     }

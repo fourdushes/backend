@@ -1,3 +1,6 @@
+package tohear.hearo.user.domain;
+
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import lombok.Getter;
@@ -17,7 +20,7 @@ public class User {
     public User() {
     }
 
-    public User(Long id, String name, String email, String password, UserType userType) {
+    public User(String id, String name, String email, String password, UserType userType) {
         this.id = id;
         this.name = name;
         this.email = email;
