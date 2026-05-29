@@ -5,6 +5,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
+
 import lombok.Getter;
 import tohear.hearo.user.auth.domain.UserType;
 
@@ -33,4 +34,7 @@ public class InstitutionsUser {
         this.userType = userType;
     }
 
+    public void changePassword(String newPassword) {
+        this.password = newPassword;
+    }
 }

@@ -1,14 +1,17 @@
-package tohear.hearo.global.mail;
+package tohear.hearo.user.auth.mail;
+
+import java.time.Duration;
+import java.util.concurrent.ThreadLocalRandom;
 
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
-import lombok.RequiredArgsConstructor;
+
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
-import java.time.Duration;
-import java.util.concurrent.ThreadLocalRandom;
+
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor

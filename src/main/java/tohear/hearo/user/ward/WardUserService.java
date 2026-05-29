@@ -1,4 +1,4 @@
-package tohear.hearo.user.guardian;
+package tohear.hearo.user.ward;
 
 import java.util.List;
 
@@ -18,17 +18,17 @@ import tohear.hearo.user.auth.dto.response.ToChangePasswordResponse;
 import tohear.hearo.user.auth.service.UserService;
 
 @Service
-@RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class GuardUserService implements UserService {
+@RequiredArgsConstructor
+public class WardUserService implements UserService {
 
-    private final GuardUserRepository userRepository;
+    private final WardUserRepository userRepository;
     private final JwtTokenProvider tokenProvider;
 
 
     @Override
     public boolean supports(UserType userType) {
-        return userType == UserType.GUARDIAN;
+        return userType == UserType.WARD;
     }
 
     @Override
@@ -36,7 +36,7 @@ public class GuardUserService implements UserService {
     public String join(JoinUserRequest request) {
 
         validateDuplicateUser(request.getId());
-        GuardUser user = new GuardUser(request.getId(), request.getName(), request.getEmail(), request.getPassword(), request.getUserType());
+        WardUser user = new WardUser(request.getId(), request.getName(), request.getEmail(), request.getPassword(), request.getUserType());
         userRepository.save(user);
         return user.getId();
     }
@@ -47,12 +47,10 @@ public class GuardUserService implements UserService {
             () -> new IllegalArgumentException("아이디를 찾을 수 없습니다."));
     }
 
-    
-
     @Override
     @Transactional
     public LoginUserResponse validateLogin(LoginUserRequest request) { // 로그인 검증
-        GuardUser user = userRepository.findById(request.getId()).orElseThrow(
+        WardUser user = userRepository.findById(request.getId()).orElseThrow(
             () -> new IllegalArgumentException("아이디가 올바르지 않습니다. "));
         
         if (!user.getPassword().equals(request.getPassword())) {
@@ -60,7 +58,7 @@ public class GuardUserService implements UserService {
         }
 
         UserType userType = user.getUserType();
-
+        
         String token = tokenProvider.createToken(user.getId(), userType);
         return new LoginUserResponse(token, user.getId(), userType);
     }
@@ -72,33 +70,33 @@ public class GuardUserService implements UserService {
         }
     }
 
-    public GuardUser findById(String id) {
+    public WardUser findById(String id) {
         return userRepository.findById(id).orElseThrow(
             () -> new IllegalArgumentException("아이디를 찾을 수 없습니다. " + id));
     }
 
-    public List<GuardUser> findAll() {
+    public List<WardUser> findAll() {
         return userRepository.findAll();
     }
 
     @Override
     public ToChangePasswordResponse validateToChangePassword(ToChangePasswordRequest request) {
 
-       GuardUser findUser = userRepository.findByEmail(request.getEmail()).orElseThrow(
+        WardUser findUser = userRepository.findByEmail(request.getEmail()).orElseThrow(
             () -> new IllegalArgumentException("이메일이 올바르지 않습니다. " + request.getEmail()));
 
         if (findUser.getName().equals(request.getName()) == false) {
             throw new IllegalArgumentException("이름이 올바르지 않습니다. " + request.getName());
         }
 
-        return new ToChangePasswordResponse(findUser.getId(), UserType.GUARDIAN);
+        return new ToChangePasswordResponse(findUser.getId(), UserType.WARD);
 
     }
 
     @Override
     public String changePassword(ChangePasswordRequest request) {
 
-        GuardUser findUser = userRepository.findById(request.getId()).orElseThrow(
+        WardUser findUser = userRepository.findById(request.getId()).orElseThrow(
             () -> new IllegalArgumentException("아이디가 올바르지 않습니다. " + request.getId()));
 
         if (request.getNewPassword().equals(request.getCheckNewPassword()) == false) {
@@ -109,4 +107,5 @@ public class GuardUserService implements UserService {
 
         return findUser.getId();
     }
+
 }

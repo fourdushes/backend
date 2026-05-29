@@ -10,6 +10,7 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
+import tohear.hearo.user.auth.domain.UserType;
 
 @Component
 public class JwtTokenProvider {
@@ -25,8 +26,9 @@ public class JwtTokenProvider {
     }
 
     // 로그인 성공 시 토큰을 생성하는 메서드
-    public String createToken(String userId) {
+    public String createToken(String userId, UserType userType) {
         Claims claims = Jwts.claims().setSubject(userId); // 토큰 주인의 ID 저장
+        claims.put("userType", userType.name()); // UserType을 문자열(WARD, GUARDIAN 등)로 저장
         Date now = new Date();
         Date validity = new Date(now.getTime() + validityInMilliseconds);
 
@@ -47,4 +49,14 @@ public class JwtTokenProvider {
             .getSubject();
     }
 
+    public UserType getUserType(String token) {
+        String userTypeStr = Jwts.parserBuilder()
+            .setSigningKey(getSigningKey())
+            .build()
+            .parseClaimsJws(token)
+            .getBody()
+            .get("userType", String.class); // 클레임에서 userType 문자열 꺼내기
+            
+        return UserType.valueOf(userTypeStr); // 문자열을 다시 오리지널 Enum 타입으로 변환해서 반환
+    }
 }

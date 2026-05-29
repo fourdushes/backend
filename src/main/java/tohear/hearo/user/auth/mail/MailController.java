@@ -1,4 +1,4 @@
-package tohear.hearo.global.mail;
+package tohear.hearo.user.auth.mail;
 
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;

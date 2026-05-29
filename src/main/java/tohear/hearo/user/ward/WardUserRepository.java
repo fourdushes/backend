@@ -1,13 +1,13 @@
-package tohear.hearo.user.guardian;
+package tohear.hearo.user.ward;
 
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface GuardUserRepository extends JpaRepository<GuardUser, String> {
+public interface WardUserRepository extends JpaRepository<WardUser, String> {
 
     Optional<String> findIdByNameAndEmail(String name, String email);
     boolean existsByEmail(String email);
-    Optional<GuardUser> findByEmail(String email);
+    Optional<WardUser> findByEmail(String email);
 
 }
