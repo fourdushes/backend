@@ -1,4 +1,4 @@
-package tohear.hearo.user.domain;
+package tohear.hearo.user.auth.domain;
 
 public enum UserType {
     WARD("피보호자"),

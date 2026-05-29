@@ -1,7 +1,7 @@
-package tohear.hearo.user.domain.dto.request;
+package tohear.hearo.user.auth.dto.request;
 
 import lombok.Data;
-import tohear.hearo.user.domain.UserType;
+import tohear.hearo.user.auth.domain.UserType;
 
 @Data
 public class JoinUserRequest {

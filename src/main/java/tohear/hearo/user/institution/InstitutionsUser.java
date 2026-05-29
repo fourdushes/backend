@@ -1,9 +1,13 @@
-package tohear.hearo.user.domain;
+package tohear.hearo.user.institution;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
+
 import lombok.Getter;
+import tohear.hearo.user.auth.domain.UserType;
 
 @Entity
 @Getter
@@ -15,6 +19,8 @@ public class InstitutionsUser {
     private String name; // 기관 사용자 이름
     private String email;
     private String password;
+
+    @Enumerated(EnumType.STRING)
     private UserType userType; // 사용자 유형 (기관 사용자)
 
     public InstitutionsUser() {
@@ -28,4 +34,7 @@ public class InstitutionsUser {
         this.userType = userType;
     }
 
+    public void changePassword(String newPassword) {
+        this.password = newPassword;
+    }
 }

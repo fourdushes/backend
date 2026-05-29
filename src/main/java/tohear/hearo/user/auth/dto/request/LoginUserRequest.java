@@ -1,4 +1,4 @@
-package tohear.hearo.user.domain.dto.request;
+package tohear.hearo.user.auth.dto.request;
 
 import lombok.Data;
 
