@@ -15,7 +15,6 @@ public interface UserService {
     String join(JoinUserRequest request);
     String findId(IdFindRequest request);
     LoginUserResponse validateLogin(LoginUserRequest request);
-    void validateDuplicateUser(String id);
     ToChangePasswordResponse validateToChangePassword(ToChangePasswordRequest request);
     String changePassword(ChangePasswordRequest request);
 

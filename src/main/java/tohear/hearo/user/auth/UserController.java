@@ -20,7 +20,6 @@ import tohear.hearo.user.auth.dto.response.LoginUserResponse;
 import tohear.hearo.user.auth.dto.response.ToChangePasswordResponse;
 import tohear.hearo.user.auth.service.CommonUserService;
 import tohear.hearo.user.auth.service.UserService;
-import tohear.hearo.user.auth.service.UserService;
 
 @RestController
 @RequiredArgsConstructor

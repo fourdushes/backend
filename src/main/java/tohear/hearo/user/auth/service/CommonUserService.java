@@ -49,4 +49,17 @@ public class CommonUserService {
         }
     }
 
+    // 3개의 테이블을 모두 확인해서 중복된 아이디가 있는지 확인
+    public void validateDuplicateUser(String id) { // 중복 회원 검증
+        if (wardUserRepository.existsById(id)) {
+            throw new IllegalStateException("이미 존재하는 회원입니다.");
+        }
+        if (guardUserRepository.existsById(id)) {
+            throw new IllegalStateException("이미 존재하는 회원입니다.");
+        }
+        if (institutionsUserRepository.existsById(id)) {
+            throw new IllegalStateException("이미 존재하는 회원입니다.");
+        }
+    }
+
 }

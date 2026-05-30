@@ -1,7 +1,11 @@
 package tohear.hearo.user.guardian;
 
+import java.time.Duration;
 import java.util.List;
+import java.util.UUID;
 
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,6 +19,7 @@ import tohear.hearo.user.auth.dto.request.LoginUserRequest;
 import tohear.hearo.user.auth.dto.request.ToChangePasswordRequest;
 import tohear.hearo.user.auth.dto.response.LoginUserResponse;
 import tohear.hearo.user.auth.dto.response.ToChangePasswordResponse;
+import tohear.hearo.user.auth.service.CommonUserService;
 import tohear.hearo.user.auth.service.UserService;
 
 @Service
@@ -24,6 +29,9 @@ public class GuardUserService implements UserService {
 
     private final GuardUserRepository userRepository;
     private final JwtTokenProvider tokenProvider;
+    private final PasswordEncoder passwordEncoder;
+    private final CommonUserService commonUserService;
+    private final StringRedisTemplate redisTemplate;
 
 
     @Override
@@ -35,8 +43,9 @@ public class GuardUserService implements UserService {
     @Transactional
     public String join(JoinUserRequest request) {
 
-        validateDuplicateUser(request.getId());
-        GuardUser user = new GuardUser(request.getId(), request.getName(), request.getEmail(), request.getPassword(), request.getUserType());
+        commonUserService.validateDuplicateUser(request.getId());
+        String encodedPassword = passwordEncoder.encode(request.getPassword());
+        GuardUser user = new GuardUser(request.getId(), request.getName(), request.getEmail(), encodedPassword, request.getUserType());
         userRepository.save(user);
         return user.getId();
     }
@@ -55,7 +64,7 @@ public class GuardUserService implements UserService {
         GuardUser user = userRepository.findById(request.getId()).orElseThrow(
             () -> new IllegalArgumentException("아이디가 올바르지 않습니다. "));
         
-        if (!user.getPassword().equals(request.getPassword())) {
+        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             throw new IllegalArgumentException("비밀번호가 올바르지 않습니다.");
         }
 
@@ -63,13 +72,6 @@ public class GuardUserService implements UserService {
 
         String token = tokenProvider.createToken(user.getId(), userType);
         return new LoginUserResponse(token, user.getId(), userType);
-    }
-
-    @Override
-    public void validateDuplicateUser(String id) { // 중복 회원 검증
-        if (userRepository.findById(id).isPresent()) {
-            throw new IllegalStateException("이미 존재하는 회원입니다.");
-        }
     }
 
     public GuardUser findById(String id) {
@@ -84,28 +86,49 @@ public class GuardUserService implements UserService {
     @Override
     public ToChangePasswordResponse validateToChangePassword(ToChangePasswordRequest request) {
 
+        // 이메일 인증 여부 확인
+       String verified = redisTemplate.opsForValue().get("mail-verified:" + request.getEmail());
+       if (!"true".equals(verified)) {
+            throw new IllegalArgumentException("이메일 인증이 완료되지 않았습니다. 이메일 인증을 먼저 진행해주세요.");
+        }
+
        GuardUser findUser = userRepository.findByEmail(request.getEmail()).orElseThrow(
             () -> new IllegalArgumentException("이메일이 올바르지 않습니다. " + request.getEmail()));
 
-        if (findUser.getName().equals(request.getName()) == false) {
-            throw new IllegalArgumentException("이름이 올바르지 않습니다. " + request.getName());
+            if (!findUser.getName().equals(request.getName())) {
+                throw new IllegalArgumentException("이름이 올바르지 않습니다. " + request.getName());
         }
+        
+        String token = UUID.randomUUID().toString(); // 랜덤한 토큰 생성
+        String redisKey = "password-reset:" + findUser.getId();
+        redisTemplate.opsForValue().set(redisKey, token, Duration.ofMinutes(3)); // 토큰을 Redis에 저장하고 3분 동안 유효하도록 설정
 
-        return new ToChangePasswordResponse(findUser.getId(), UserType.GUARDIAN);
+        return new ToChangePasswordResponse(findUser.getId(), UserType.GUARDIAN, token);
 
     }
 
     @Override
+    @Transactional
     public String changePassword(ChangePasswordRequest request) {
 
-        GuardUser findUser = userRepository.findById(request.getId()).orElseThrow(
-            () -> new IllegalArgumentException("아이디가 올바르지 않습니다. " + request.getId()));
+        String redisKey = "password-reset:" + request.getId();
+        String savedToken = (String) redisTemplate.opsForValue().get(redisKey);
 
-        if (request.getNewPassword().equals(request.getCheckNewPassword()) == false) {
+        if (savedToken == null || !savedToken.equals(request.getTempToken())) {
+            throw new IllegalArgumentException("인증 시간이 만료되었거나 유효하지 않은 접근입니다. 처음부터 다시 시도해주세요.");
+        }
+
+        GuardUser findUser = userRepository.findById(request.getId()).orElseThrow(
+            () -> new IllegalArgumentException("잘못된 아이디 전송 직전 화면으로 이동 " + request.getId()));
+
+        if (!request.getNewPassword().equals(request.getCheckNewPassword())) {
             throw new IllegalArgumentException("비밀번호가 일치하지 않습니다.");
         }
 
-        findUser.changePassword(request.getNewPassword());
+        String encodedNewPassword = passwordEncoder.encode(request.getNewPassword());
+        findUser.changePassword(encodedNewPassword);
+
+        redisTemplate.delete(redisKey);
 
         return findUser.getId();
     }

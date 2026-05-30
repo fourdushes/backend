@@ -71,6 +71,11 @@ public class MailService {
 
         if (isCorrect) {
             redisTemplate.delete("mail:" + mail); // 인증 성공 시 Redis에서 데이터 삭제
+            redisTemplate.opsForValue().set(
+                "mail-verified:" + mail,
+                "true",
+                Duration.ofMinutes(10)
+            ); // 인증 성공 후 10분 동안 이메일 인증 완료 상태 유지
         }
 
         return isCorrect;
