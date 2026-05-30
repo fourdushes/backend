@@ -2,6 +2,7 @@ package tohear.hearo.user.ward;
 
 import java.util.List;
 
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,7 +25,7 @@ public class WardUserService implements UserService {
 
     private final WardUserRepository userRepository;
     private final JwtTokenProvider tokenProvider;
-
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     public boolean supports(UserType userType) {
@@ -36,7 +37,8 @@ public class WardUserService implements UserService {
     public String join(JoinUserRequest request) {
 
         validateDuplicateUser(request.getId());
-        WardUser user = new WardUser(request.getId(), request.getName(), request.getEmail(), request.getPassword(), request.getUserType());
+        String encodedPassword = passwordEncoder.encode(request.getPassword());
+        WardUser user = new WardUser(request.getId(), request.getName(), request.getEmail(), encodedPassword, request.getUserType());
         userRepository.save(user);
         return user.getId();
     }
@@ -53,7 +55,7 @@ public class WardUserService implements UserService {
         WardUser user = userRepository.findById(request.getId()).orElseThrow(
             () -> new IllegalArgumentException("아이디가 올바르지 않습니다. "));
         
-        if (!user.getPassword().equals(request.getPassword())) {
+        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             throw new IllegalArgumentException("비밀번호가 올바르지 않습니다.");
         }
 

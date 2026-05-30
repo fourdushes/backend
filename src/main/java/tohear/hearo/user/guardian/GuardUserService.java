@@ -2,6 +2,7 @@ package tohear.hearo.user.guardian;
 
 import java.util.List;
 
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,6 +25,7 @@ public class GuardUserService implements UserService {
 
     private final GuardUserRepository userRepository;
     private final JwtTokenProvider tokenProvider;
+    private final PasswordEncoder passwordEncoder;
 
 
     @Override
@@ -36,7 +38,8 @@ public class GuardUserService implements UserService {
     public String join(JoinUserRequest request) {
 
         validateDuplicateUser(request.getId());
-        GuardUser user = new GuardUser(request.getId(), request.getName(), request.getEmail(), request.getPassword(), request.getUserType());
+        String encodedPassword = passwordEncoder.encode(request.getPassword());
+        GuardUser user = new GuardUser(request.getId(), request.getName(), request.getEmail(), encodedPassword, request.getUserType());
         userRepository.save(user);
         return user.getId();
     }
@@ -55,7 +58,7 @@ public class GuardUserService implements UserService {
         GuardUser user = userRepository.findById(request.getId()).orElseThrow(
             () -> new IllegalArgumentException("아이디가 올바르지 않습니다. "));
         
-        if (!user.getPassword().equals(request.getPassword())) {
+        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             throw new IllegalArgumentException("비밀번호가 올바르지 않습니다.");
         }
 
