@@ -92,6 +92,7 @@ public class InstitutionsUserService implements UserService {
     }
 
     @Override
+    @Transactional
     public String changePassword(ChangePasswordRequest request) {
 
         InstitutionsUser findUser = userRepository.findById(request.getId()).orElseThrow(

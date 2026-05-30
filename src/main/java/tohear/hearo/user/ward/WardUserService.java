@@ -91,6 +91,7 @@ public class WardUserService implements UserService {
     }
 
     @Override
+    @Transactional
     public String changePassword(ChangePasswordRequest request) {
 
         WardUser findUser = userRepository.findById(request.getId()).orElseThrow(

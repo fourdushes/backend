@@ -94,6 +94,7 @@ public class GuardUserService implements UserService {
     }
 
     @Override
+    @Transactional
     public String changePassword(ChangePasswordRequest request) {
 
         GuardUser findUser = userRepository.findById(request.getId()).orElseThrow(
