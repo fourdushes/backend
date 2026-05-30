@@ -1,9 +1,11 @@
 package tohear.hearo.user.auth.dto.request;
 
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import tohear.hearo.user.auth.domain.UserType;
 
 @Data
+@NoArgsConstructor
 public class ChangePasswordRequest {
 
     private String id;
