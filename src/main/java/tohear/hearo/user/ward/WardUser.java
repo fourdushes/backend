@@ -14,7 +14,7 @@ import tohear.hearo.user.auth.domain.UserType;
 public class WardUser {
 
     @Id
-    @Column(name = "user_id")
+    @Column(name = "ward_user_id")
     private String id;
     private String name; // 환자 이름
     private String email;

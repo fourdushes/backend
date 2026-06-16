@@ -4,6 +4,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.util.Date;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import io.jsonwebtoken.Claims;
@@ -15,10 +16,11 @@ import tohear.hearo.user.auth.domain.UserType;
 @Component
 public class JwtTokenProvider {
 
-    // 실무에서는 이 secret 키를 application.properties 환경변수로 빼서 관리합니다.
-    // 최소 32바이트 이상의 임의의 문자열이 필요합니다.
-    private final String secretKey = "yourCustomSecretKey";
-    private final long validityInMilliseconds = 36000000; // 토큰 유효시간 10시간
+    @Value("${jwt.secret}")
+    private String secretKey;
+
+    @Value("${jwt.validity-in-milliseconds}")
+    private long validityInMilliseconds;
 
     private Key getSigningKey() {
         byte[] keyBytes = secretKey.getBytes(StandardCharsets.UTF_8);

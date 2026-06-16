@@ -56,8 +56,6 @@ public class GuardUserService implements UserService {
             () -> new IllegalArgumentException("아이디를 찾을 수 없습니다."));
     }
 
-    
-
     @Override
     @Transactional
     public LoginUserResponse validateLogin(LoginUserRequest request) { // 로그인 검증
