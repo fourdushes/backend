@@ -1,0 +1,15 @@
+package tohear.hearo.medicaltreatment.institution.dto.response;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class InstitutionResponse {
+
+    private String institutionUserId;
+    private String name;
+    private String email;
+}

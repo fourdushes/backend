@@ -25,9 +25,9 @@ import com.google.gson.Gson;
 public class ClovaSpeechClient {
 
     // Clova Speech secret key
-	private static final String SECRET = "";
+	private static final String SECRET = "c23e57ad7dc24a9e87a9ce3e1f9199e7";
     // Clova Speech invoke URL
-	private static final String INVOKE_URL = "";
+	private static final String INVOKE_URL = "https://clovaspeech-gw.ncloud.com/external/v1/16177/20690c2306a901655ce7f8d52aac177acbbcb3f53ce1663e90e111f5529a2e0f";
 
 	private CloseableHttpClient httpClient = HttpClients.createDefault();
 	private Gson gson = new Gson();
@@ -266,15 +266,5 @@ public class ClovaSpeechClient {
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
-	}
-
-	public static void main(String[] args) {
-		final ClovaSpeechClient clovaSpeechClient = new ClovaSpeechClient();
-		NestRequestEntity requestEntity = new NestRequestEntity();
-		final String result =
-			clovaSpeechClient.upload(new File("/data/sample.mp4"), requestEntity);
-		//final String result = clovaSpeechClient.url("file URL", requestEntity); 
-		//final String result = clovaSpeechClient.objectStorage("Object Storage key", requestEntity);
-		System.out.println(result);
 	}
 }

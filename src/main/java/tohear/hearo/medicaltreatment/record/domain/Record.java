@@ -9,7 +9,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.OneToOne;
+import jakarta.persistence.ManyToOne;
 
 import lombok.Getter;
 import tohear.hearo.medicaltreatment.archive.domain.Archive;
@@ -27,11 +27,11 @@ public class Record {
     private LocalDateTime recordDate;
 
     @JoinColumn(name = "archive_id")
-    @OneToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY)
     private Archive archive;
 
     @JoinColumn(name = "ward_user_id")
-    @OneToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY)
     private WardUser wardUser;
 
     public Record() {
