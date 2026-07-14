@@ -4,11 +4,16 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import lombok.RequiredArgsConstructor;
+import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import tohear.hearo.medicaltreatment.archive.service.ArchiveService;
 import tohear.hearo.medicaltreatment.record.clovaspeech.ClovaSpeechClient;
 import tohear.hearo.medicaltreatment.record.clovaspeech.ClovaSpeechClient.NestRequestEntity;
@@ -26,6 +31,10 @@ public class RecordService {
     private final ClovaSpeechClient clovaSpeechClient;
     private final WardUserService wardUserService;
     private final ArchiveService archiveService;
+    private final S3Client s3Client;
+
+    @Value("${aws.s3.bucket}")
+    private String bucketName;
 
     // 녹음 종료시 녹음파일을 텍스트화 하는 메서드
     public CompleteRecordResponse completeRecord(CompleteRecordRequest request) throws IOException {
@@ -40,6 +49,18 @@ public class RecordService {
 
         try {
             multipartFile.transferTo(tempPath);
+            
+            String objectKey =
+                "records/" + UUID.randomUUID() + extension;
+
+            s3Client.putObject(
+                PutObjectRequest.builder()
+                .bucket(bucketName)
+                .key(objectKey)
+                .contentType(multipartFile.getContentType())
+                .build(),
+            RequestBody.fromFile(tempPath)
+            );
 
             NestRequestEntity requestEntity = new NestRequestEntity();
             String result = clovaSpeechClient.upload(
@@ -48,7 +69,7 @@ public class RecordService {
             );
 
             Record record = new Record(
-                originalFileName,
+                objectKey,
                 LocalDateTime.now(),
                 archiveService.findById(request.getArchiveId()),
                 wardUserService.findById(request.getWardUserId())
