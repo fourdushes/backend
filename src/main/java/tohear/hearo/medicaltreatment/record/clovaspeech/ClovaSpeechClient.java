@@ -1,4 +1,4 @@
-package tohear.hearo.record.clovaspeech;
+package tohear.hearo.medicaltreatment.record.clovaspeech;
 
 import java.io.File;
 import java.nio.charset.StandardCharsets;

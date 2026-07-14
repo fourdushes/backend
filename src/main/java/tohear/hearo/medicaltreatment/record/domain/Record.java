@@ -1,4 +1,4 @@
-package tohear.hearo.record.domain;
+package tohear.hearo.medicaltreatment.record.domain;
 
 import java.time.LocalDateTime;
 
@@ -12,7 +12,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToOne;
 
 import lombok.Getter;
-import tohear.hearo.Archive.domain.Archive;
+import tohear.hearo.medicaltreatment.archive.domain.Archive;
 import tohear.hearo.user.ward.WardUser;
 
 @Entity
@@ -23,7 +23,7 @@ public class Record {
     @Column(name = "record_id")
     private Long id;
 
-    private byte[] recordFile;
+    private String recordFile; // https://my-bucket.s3.ap-northeast-2.amazonaws.com/audio/record123.m4a
     private LocalDateTime recordDate;
 
     @JoinColumn(name = "archive_id")
@@ -37,8 +37,8 @@ public class Record {
     public Record() {
     }
 
-    public Record(byte[] recordFile, LocalDateTime recordDate, Archive archive, WardUser wardUser) {
-        this.recordFile = recordFile;
+    public Record(String recordFile, LocalDateTime recordDate, Archive archive, WardUser wardUser) {
+        this.recordFile = "https://my-bucket.s3.ap-northeast-2.amazonaws.com/audio/" + recordFile;
         this.recordDate = recordDate;
         this.archive = archive;
         this.wardUser = wardUser;

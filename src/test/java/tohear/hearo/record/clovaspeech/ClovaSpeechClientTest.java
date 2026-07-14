@@ -1,13 +1,15 @@
 package tohear.hearo.record.clovaspeech;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import java.util.List;
 import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 
 import com.google.gson.Gson;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+import tohear.hearo.medicaltreatment.record.clovaspeech.ClovaSpeechClient;
 
 class ClovaSpeechClientTest {
 

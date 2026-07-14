@@ -1,4 +1,4 @@
-package tohear.hearo.record.dto.response;
+package tohear.hearo.medicaltreatment.record.dto.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

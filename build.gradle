@@ -34,6 +34,11 @@ dependencies {
     implementation 'org.apache.httpcomponents:httpmime:4.3.1'
     implementation 'com.google.code.gson:gson:2.8.5'
 
+	// AWS s3 의존성
+    implementation platform("software.amazon.awssdk:bom:2.33.0")
+    implementation "software.amazon.awssdk:s3"
+
+
 	implementation 'com.querydsl:querydsl-jpa:5.0.0:jakarta'
 	annotationProcessor "com.querydsl:querydsl-apt:${dependencyManagement.importedProperties['querydsl.version']}:jakarta"
 	annotationProcessor 'jakarta.persistence:jakarta.persistence-api'
