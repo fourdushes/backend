@@ -132,7 +132,7 @@ public class CareService {
                                         -> new IllegalArgumentException("보호자를 찾을 수 없습니다."));
 
 
-        List<WardUser> WardUserList = careRepository.findWardUser2(findGuardUser); // 보호자가 보호하고 있는 피보호자 리스트 뽑기
+        List<WardUser> WardUserList = careRepository.findWardUser(findGuardUser); // 보호자가 보호하고 있는 피보호자 리스트 뽑기
 
         // Care 엔티티에서 WardUser의 정보를 추출하여 WardSearchDto 객체를 생성하고 리스트 만들기
         for (WardUser wardUser : WardUserList) {

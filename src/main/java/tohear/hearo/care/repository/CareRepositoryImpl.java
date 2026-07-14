@@ -6,7 +6,8 @@ import com.querydsl.jpa.impl.JPAQueryFactory;
 
 import lombok.RequiredArgsConstructor;
 import tohear.hearo.care.domain.Care;
-import tohear.hearo.user.care.domain.QCare;
+import tohear.hearo.care.domain.CareState;
+import tohear.hearo.care.domain.QCare;
 import tohear.hearo.user.guardian.GuardUser;
 import tohear.hearo.user.guardian.QGuardUser;
 import tohear.hearo.user.ward.QWardUser;
@@ -23,7 +24,7 @@ public class CareRepositoryImpl implements CareRepositoryCustom {
                 .select(QGuardUser.guardUser)
                 .from(QCare.care)
                 .join(QGuardUser.guardUser).fetchJoin()
-                .where(QCare.care.wardUser.eq(wardUser))
+                .where(QCare.care.wardUser.eq(wardUser).and(QCare.care.careState.eq(CareState.APPROVED)))
                 .fetch();
     }
 
@@ -33,7 +34,7 @@ public class CareRepositoryImpl implements CareRepositoryCustom {
                 .select(QWardUser.wardUser)
                 .from(QCare.care)
                 .join(QWardUser.wardUser).fetchJoin()
-                .where(QCare.care.guardUser.eq(guardUser))
+                .where(QCare.care.guardUser.eq(guardUser).and(QCare.care.careState.eq(CareState.APPROVED)))
                 .fetch();
     }
 

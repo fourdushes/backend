@@ -59,7 +59,6 @@ public class CareController {
         return new Result<>("200", "연결 리스트 확인에 성공했습니다.", response);
     }
     
-    
     // 피보호자는 승인
     @PostMapping("/api/care/user/change-care-approve")
     public Result changeCareApprove(@RequestBody ChangeCareStateRequest request) {

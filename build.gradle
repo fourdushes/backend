@@ -28,6 +28,11 @@ dependencies {
 	implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
 	// 비밀번호 암호화를 위한 Spring Security Crypto 라이브러리
 	implementation 'org.springframework.security:spring-security-crypto'
+	
+	// clova speech api 라이브러리
+	implementation 'org.apache.httpcomponents:httpclient:4.5.12'
+    implementation 'org.apache.httpcomponents:httpmime:4.3.1'
+    implementation 'com.google.code.gson:gson:2.8.5'
 
 	implementation 'com.querydsl:querydsl-jpa:5.0.0:jakarta'
 	annotationProcessor "com.querydsl:querydsl-apt:${dependencyManagement.importedProperties['querydsl.version']}:jakarta"
