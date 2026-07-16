@@ -10,7 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
-import tohear.hearo.global.JwtTokenProvider;
+import tohear.hearo.global.security.JwtTokenProvider;
 import tohear.hearo.user.auth.domain.UserType;
 import tohear.hearo.user.auth.dto.request.ChangePasswordRequest;
 import tohear.hearo.user.auth.dto.request.IdFindRequest;
@@ -60,15 +60,23 @@ public class InstitutionsUserService implements UserService {
     public LoginUserResponse validateLogin(LoginUserRequest request) { // 로그인 검증
         InstitutionsUser user = userRepository.findById(request.getId()).orElseThrow(
             () -> new IllegalArgumentException("아이디가 올바르지 않습니다. "));
-        
+
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             throw new IllegalArgumentException("비밀번호가 올바르지 않습니다.");
         }
 
         UserType userType = user.getUserType();
         
-        String token = tokenProvider.createToken(user.getId(), userType);
-        return new LoginUserResponse(token, user.getId(), userType);
+        String accessToken = tokenProvider.createAccessToken(user.getId(), userType);
+        String refreshToken = tokenProvider.createRefreshToken(user.getId(), userType);
+
+        redisTemplate.opsForValue().set(
+            "refresh-token:" + user.getId(),
+            refreshToken,
+            Duration.ofMillis(tokenProvider.getRefreshTokenValidityInMilliseconds())
+        );
+        
+        return new LoginUserResponse(accessToken, user.getId(), userType, refreshToken);
     }
 
     public InstitutionsUser findById(String id) {

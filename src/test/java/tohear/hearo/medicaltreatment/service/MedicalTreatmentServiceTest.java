@@ -1,12 +1,5 @@
 package tohear.hearo.medicaltreatment.service;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -16,12 +9,19 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.test.util.ReflectionTestUtils;
 
-import tohear.hearo.medicaltreatment.archive.domain.Archive;
-import tohear.hearo.medicaltreatment.archive.reposiotry.ArchiveRepository;
-import tohear.hearo.medicaltreatment.auth.MedicalUserPrincipal;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import tohear.hearo.archive.domain.Archive;
+import tohear.hearo.archive.repository.ArchiveRepository;
+import tohear.hearo.user.auth.principal.MedicalUserPrincipal;
 import tohear.hearo.medicaltreatment.chat.domain.ChatMessage;
 import tohear.hearo.medicaltreatment.chat.domain.ChatMessageType;
 import tohear.hearo.medicaltreatment.chat.domain.ChatRoom;
@@ -33,10 +33,10 @@ import tohear.hearo.medicaltreatment.institution.repository.InstitutionSearchRep
 import tohear.hearo.medicaltreatment.medicalrequest.domain.MedicalRequest;
 import tohear.hearo.medicaltreatment.medicalrequest.domain.MedicalRequestStatus;
 import tohear.hearo.medicaltreatment.medicalrequest.repository.MedicalRequestRepository;
-import tohear.hearo.medicaltreatment.record.recordservice.RecordService;
-import tohear.hearo.medicaltreatment.record.repository.MedicalRecordLookupRepository;
 import tohear.hearo.medicaltreatment.record.domain.Record;
 import tohear.hearo.medicaltreatment.record.dto.response.CompleteRecordResponse;
+import tohear.hearo.medicaltreatment.record.service.RecordService;
+import tohear.hearo.medicaltreatment.record.repository.MedicalRecordLookupRepository;
 import tohear.hearo.user.auth.domain.UserType;
 import tohear.hearo.user.institution.InstitutionsUser;
 import tohear.hearo.user.ward.WardUser;

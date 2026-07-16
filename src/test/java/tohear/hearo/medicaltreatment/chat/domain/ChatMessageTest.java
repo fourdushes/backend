@@ -1,11 +1,11 @@
 package tohear.hearo.medicaltreatment.chat.domain;
 
+import org.junit.jupiter.api.Test;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import org.junit.jupiter.api.Test;
-
-import tohear.hearo.medicaltreatment.archive.domain.Archive;
+import tohear.hearo.archive.domain.Archive;
 import tohear.hearo.medicaltreatment.medicalrequest.domain.MedicalRequest;
 import tohear.hearo.user.auth.domain.UserType;
 import tohear.hearo.user.institution.InstitutionsUser;

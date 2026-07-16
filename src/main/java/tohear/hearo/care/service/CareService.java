@@ -10,11 +10,7 @@ import lombok.RequiredArgsConstructor;
 import tohear.hearo.care.domain.Care;
 import tohear.hearo.care.dto.request.ChangeCareStateRequest;
 import tohear.hearo.care.dto.request.FindWardToCareRequest;
-import tohear.hearo.care.dto.request.GuardCheckCareListRequest;
-import tohear.hearo.care.dto.request.GuardSearchRequest;
 import tohear.hearo.care.dto.request.SaveCareRequest;
-import tohear.hearo.care.dto.request.WardCheckCareListRequest;
-import tohear.hearo.care.dto.request.WardSearchRequest;
 import tohear.hearo.care.dto.response.ChangeCareStateResponse;
 import tohear.hearo.care.dto.response.CheckCareListDto;
 import tohear.hearo.care.dto.response.CheckCareListResponse;
@@ -26,6 +22,8 @@ import tohear.hearo.care.dto.response.SaveCareResponse;
 import tohear.hearo.care.dto.response.WardSearchDto;
 import tohear.hearo.care.dto.response.WardSearchResponse;
 import tohear.hearo.care.repository.CareRepository;
+import tohear.hearo.user.auth.domain.UserType;
+import tohear.hearo.user.auth.principal.MedicalUserPrincipal;
 import tohear.hearo.user.guardian.GuardUser;
 import tohear.hearo.user.guardian.GuardUserRepository;
 import tohear.hearo.user.ward.WardUser;
@@ -41,7 +39,11 @@ public class CareService {
     private final WardUserRepository wardUserRepository;
 
     // 보호자가 피보호자를 검색
-    public FindWardToCareResponse findWardToCare(FindWardToCareRequest request) {
+    public FindWardToCareResponse findWardToCare(MedicalUserPrincipal principal, FindWardToCareRequest request) {
+
+        if (principal.getUserType() != UserType.GUARDIAN) {
+            throw new IllegalArgumentException("보호자만 검색할 수 있는 기능입니다.");
+        }
 
         List<FindWardToCareDto> wardUserList = new ArrayList<>(); // FindWardToCareDto 객체를 담을 리스트 생성
 
@@ -58,20 +60,39 @@ public class CareService {
     }
 
     // 연결 저장
-    public SaveCareResponse saveCare(SaveCareRequest request) {
-        GuardUser guardUser = guardUserRepository.findById(request.getGuardUserId()).orElseThrow(() -> 
+    @Transactional
+    public SaveCareResponse saveCare(MedicalUserPrincipal principal, SaveCareRequest request) {
+
+        if (principal.getUserType() != UserType.GUARDIAN) {
+            throw new IllegalArgumentException("보호자만 연결을 신청할 수 있습니다.");
+        }
+
+        GuardUser guardUser = guardUserRepository.findById(principal.getUserId()).orElseThrow(() -> 
                                                             new IllegalArgumentException("보호자를 찾을 수 없습니다."));
         WardUser wardUser = wardUserRepository.findById(request.getWardUserId()).orElseThrow(() -> 
                                                             new IllegalArgumentException("피보호자를 찾을 수 없습니다."));
+
+        if (careRepository.existsActiveCare(guardUser, wardUser)) {
+            throw new IllegalArgumentException("이미 신청 되었거나 연결된 사용자입니다.");
+        }
+
         Care care = new Care(wardUser, guardUser);
         careRepository.save(care);
         return new SaveCareResponse(care.getId());
     }
 
     // 연결 리스트 확인 - 피보호자 기준
-    public CheckCareListResponse checkCareListByWardUser(WardCheckCareListRequest request) {
+    public CheckCareListResponse checkCareListByWardUser(MedicalUserPrincipal principal) {
+
+        UserType userType = principal.getUserType();
+
+        if (userType != UserType.WARD) {
+            throw new IllegalArgumentException("피보호자만 연결 목록을 조회할 수 있습니다");
+        }
+
         List<Care> careList = careRepository.findCareByWardUser(
-                                wardUserRepository.findById(request.getWardUserId()).orElseThrow(() -> new IllegalArgumentException("피보호자를 찾을 수 없습니다.")));
+                                wardUserRepository.findById(principal.getUserId()).orElseThrow(
+                                    () -> new IllegalArgumentException("피보호자를 찾을 수 없습니다.")));
         
         List<CheckCareListDto> responseList = new ArrayList<>();
         for (Care care : careList) {
@@ -88,9 +109,17 @@ public class CareService {
     }
 
     // 연결 리스트 확인 - 보호자 기준
-    public CheckCareListResponse checkCareListByGuardUser(GuardCheckCareListRequest request) {
+    public CheckCareListResponse checkCareListByGuardUser(MedicalUserPrincipal principal) {
+
+        UserType userType = principal.getUserType();
+
+        if (userType != UserType.GUARDIAN) {
+            throw new IllegalArgumentException("보호자만 연결 목록을 조회할 수 있습니다");
+        }
+
         List<Care> careList = careRepository.findCareByGuardUser(
-                                guardUserRepository.findById(request.getGuardUserId()).orElseThrow(() -> new IllegalArgumentException("보호자를 찾을 수 없습니다.")));
+                                guardUserRepository.findById(principal.getUserId()).orElseThrow(
+                                    () -> new IllegalArgumentException("보호자를 찾을 수 없습니다.")));
         
         List<CheckCareListDto> responseList = new ArrayList<>();
         for (Care care : careList) {
@@ -108,27 +137,45 @@ public class CareService {
     
 
     // 연결 승인
-    public ChangeCareStateResponse approveCare(ChangeCareStateRequest request) {
-        Care findCare = careRepository.findById(request.getCareId()).orElseThrow(() -> 
-                                new IllegalArgumentException("보호자 연결 요청을 찾을 수 없습니다."));
+    @Transactional
+    public ChangeCareStateResponse approveCare(MedicalUserPrincipal principal, ChangeCareStateRequest request) {
+
+        if (principal.getUserType() != UserType.WARD) {
+            throw new IllegalArgumentException("피보호자만 연결 요청을 변경할 수 있습니다.");
+        }
+
+        Care findCare = careRepository.findByIdAndWardUser_Id(request.getCareId(),principal.getUserId()).orElseThrow(
+            () -> new IllegalArgumentException("연결 요청을 찾을 수 없거나 변경 권한이 없습니다."));
+
         findCare.approve();
         return new ChangeCareStateResponse(findCare.getId(), findCare.getCareState());
     }
 
     // 연결 거절
-    public ChangeCareStateResponse rejectCare(ChangeCareStateRequest request) {
-        Care findCare = careRepository.findById(request.getCareId()).orElseThrow(() -> 
-                                new IllegalArgumentException("보호자 연결 요청을 찾을 수 없습니다."));
+    @Transactional
+    public ChangeCareStateResponse rejectCare(MedicalUserPrincipal principal, ChangeCareStateRequest request) {
+
+        if (principal.getUserType() != UserType.WARD) {
+            throw new IllegalArgumentException("피보호자만 연결 요청을 변경할 수 있습니다.");
+        }
+
+        Care findCare = careRepository.findByIdAndWardUser_Id(request.getCareId(),principal.getUserId()).orElseThrow(
+            () -> new IllegalArgumentException("연결 요청을 찾을 수 없거나 변경 권한이 없습니다."));
+
         findCare.reject();
         return new ChangeCareStateResponse(findCare.getId(), findCare.getCareState());
     }
 
     // 보호자가 피보호자를 조회
-    public WardSearchResponse searchWardUsers(WardSearchRequest request) {
+    public WardSearchResponse searchWardUsers(MedicalUserPrincipal principal) {
+
+        if (principal.getUserType() != UserType.GUARDIAN) {
+            throw new IllegalArgumentException("보호자만 피보호자를 조회할 수 있습니다.");
+        }
 
         List<WardSearchDto> wardSearchList = new ArrayList<>(); // WardSearchDto 객체를 담을 리스트 생성
 
-        GuardUser findGuardUser = guardUserRepository.findById(request.getGuardUserId()).orElseThrow(() 
+        GuardUser findGuardUser = guardUserRepository.findById(principal.getUserId()).orElseThrow(() 
                                         -> new IllegalArgumentException("보호자를 찾을 수 없습니다."));
 
 
@@ -147,11 +194,15 @@ public class CareService {
     }
 
     // 피보호자가 보호자를 조회
-    public GuardSearchResponse searchGuardUsers(GuardSearchRequest request) {
+    public GuardSearchResponse searchGuardUsers(MedicalUserPrincipal principal) {
+
+        if (principal.getUserType() != UserType.WARD) {
+            throw new IllegalArgumentException("피보호자만 보호자를 조회할 수 있습니다.");
+        }
 
         List<GuardSearchDto> guardSearchList = new ArrayList<>(); // GuardSearchDto 객체를 담을 리스트 생성
 
-        WardUser findWardUser = wardUserRepository.findById(request.getWardUserId()).orElseThrow(() 
+        WardUser findWardUser = wardUserRepository.findById(principal.getUserId()).orElseThrow(() 
                                         -> new IllegalArgumentException("피보호자를 찾을 수 없습니다."));
 
 

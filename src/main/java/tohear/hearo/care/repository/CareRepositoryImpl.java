@@ -62,6 +62,24 @@ public class CareRepositoryImpl implements CareRepositoryCustom {
                 .where(QCare.care.wardUser.eq(wardUser))
                 .fetch();
     }
+
+    @Override
+    public boolean existsActiveCare(GuardUser guardUser, WardUser wardUser) {
+        Integer result = queryFactory
+                .selectOne()
+                .from(QCare.care)
+                .where(
+                    QCare.care.guardUser.eq(guardUser),
+                    QCare.care.wardUser.eq(wardUser),
+                    QCare.care.careState.in(
+                        CareState.PENDING,
+                        CareState.APPROVED
+                    )
+                )
+                .fetchFirst();
+
+        return result != null; // result가 null이면 F(없음), result가 1이면 T(이미 존재)
+    }
     
 
 }

@@ -9,9 +9,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import lombok.RequiredArgsConstructor;
-import tohear.hearo.medicaltreatment.archive.domain.Archive;
-import tohear.hearo.medicaltreatment.archive.reposiotry.ArchiveRepository;
-import tohear.hearo.medicaltreatment.auth.MedicalUserPrincipal;
+import tohear.hearo.archive.domain.Archive;
+import tohear.hearo.archive.repository.ArchiveRepository;
+import tohear.hearo.user.auth.principal.MedicalUserPrincipal;
 import tohear.hearo.medicaltreatment.chat.domain.ChatMessage;
 import tohear.hearo.medicaltreatment.chat.domain.ChatMessageType;
 import tohear.hearo.medicaltreatment.chat.domain.ChatRoom;
@@ -31,7 +31,7 @@ import tohear.hearo.medicaltreatment.medicalrequest.repository.MedicalRequestRep
 import tohear.hearo.medicaltreatment.record.domain.Record;
 import tohear.hearo.medicaltreatment.record.dto.request.CompleteRecordRequest;
 import tohear.hearo.medicaltreatment.record.dto.response.CompleteRecordResponse;
-import tohear.hearo.medicaltreatment.record.recordservice.RecordService;
+import tohear.hearo.medicaltreatment.record.service.RecordService;
 import tohear.hearo.medicaltreatment.record.repository.MedicalRecordLookupRepository;
 import tohear.hearo.user.auth.domain.UserType;
 import tohear.hearo.user.institution.InstitutionsUser;

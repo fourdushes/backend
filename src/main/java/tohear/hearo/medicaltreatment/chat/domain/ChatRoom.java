@@ -13,8 +13,9 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
+
 import lombok.Getter;
-import tohear.hearo.medicaltreatment.archive.domain.Archive;
+import tohear.hearo.archive.domain.Archive;
 import tohear.hearo.medicaltreatment.medicalrequest.domain.MedicalRequest;
 import tohear.hearo.user.institution.InstitutionsUser;
 import tohear.hearo.user.ward.WardUser;

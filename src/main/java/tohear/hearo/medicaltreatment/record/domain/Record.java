@@ -12,7 +12,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 
 import lombok.Getter;
-import tohear.hearo.medicaltreatment.archive.domain.Archive;
+import tohear.hearo.archive.domain.Archive;
 import tohear.hearo.user.ward.WardUser;
 
 @Entity
@@ -23,7 +23,7 @@ public class Record {
     @Column(name = "record_id")
     private Long id;
 
-    private String recordFile; // https://my-bucket.s3.ap-northeast-2.amazonaws.com/audio/record123.m4a
+    private String recordFile;
     private LocalDateTime recordDate;
 
     @JoinColumn(name = "archive_id")

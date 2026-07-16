@@ -13,9 +13,9 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import lombok.RequiredArgsConstructor;
-import tohear.hearo.global.Result;
-import tohear.hearo.medicaltreatment.auth.CurrentMedicalUser;
-import tohear.hearo.medicaltreatment.auth.MedicalUserPrincipal;
+import tohear.hearo.global.response.Result;
+import tohear.hearo.user.auth.principal.CurrentMedicalUser;
+import tohear.hearo.user.auth.principal.MedicalUserPrincipal;
 import tohear.hearo.medicaltreatment.chat.dto.response.ChatMessageResponse;
 import tohear.hearo.medicaltreatment.chat.dto.response.ChatRoomResponse;
 import tohear.hearo.medicaltreatment.medicalrequest.dto.response.MedicalRequestResponse;
