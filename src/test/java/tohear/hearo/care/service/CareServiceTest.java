@@ -8,6 +8,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -47,12 +50,17 @@ class CareServiceTest {
         MedicalUserPrincipal principal = new MedicalUserPrincipal("guard", UserType.GUARDIAN);
         FindWardToCareRequest request = new FindWardToCareRequest();
         request.setWardUserId("ward");
+        Pageable pageable = PageRequest.of(0, 10);
         WardUser ward = new WardUser("ward-1", "홍길동", "w@test.com", "pw", UserType.WARD);
-        when(careRepository.findWardUserToCare("ward")).thenReturn(List.of(ward));
+        when(careRepository.findWardUserToCare("ward", pageable))
+            .thenReturn(new PageImpl<>(List.of(ward), pageable, 11));
 
-        var response = service.findWardToCare(principal, request);
+        var response = service.findWardToCare(principal, request, pageable);
 
-        assertThat(response.getTotalCount()).isOne();
+        assertThat(response.getTotalCount()).isEqualTo(11);
+        assertThat(response.getCurrentPage()).isZero();
+        assertThat(response.getPageSize()).isEqualTo(10);
+        assertThat(response.isHasNext()).isTrue();
         assertThat(response.getWardUserList().getFirst().getWardUserId()).isEqualTo("ward-1");
         assertThat(response.getWardUserList().getFirst().getWardUserName()).isEqualTo("홍길동");
     }
@@ -61,8 +69,9 @@ class CareServiceTest {
     void wardSearchFailsWhenCurrentUserIsNotGuardian() {
         MedicalUserPrincipal principal = new MedicalUserPrincipal("ward", UserType.WARD);
         FindWardToCareRequest request = new FindWardToCareRequest();
+        Pageable pageable = PageRequest.of(0, 10);
 
-        assertThatThrownBy(() -> service.findWardToCare(principal, request))
+        assertThatThrownBy(() -> service.findWardToCare(principal, request, pageable))
             .isInstanceOf(IllegalArgumentException.class)
             .hasMessage("보호자만 검색할 수 있는 기능입니다.");
     }
