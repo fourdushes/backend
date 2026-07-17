@@ -1,5 +1,8 @@
 package tohear.hearo.care.controller;
 
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -31,8 +34,10 @@ public class CareController {
 
     // 보호자가 피보호자를 검색하는 API
     @GetMapping("/api/care/user/search-ward-user")
-    public Result searchWardUserToCare(@CurrentMedicalUser MedicalUserPrincipal principal, @ModelAttribute FindWardToCareRequest request) {
-        FindWardToCareResponse response = careService.findWardToCare(principal, request);
+    public Result searchWardUserToCare(@CurrentMedicalUser MedicalUserPrincipal principal,
+                                       @ModelAttribute FindWardToCareRequest request,
+                                       @PageableDefault(page = 0, size = 10, sort = "id", direction = Sort.Direction.ASC) Pageable pageable) {
+        FindWardToCareResponse response = careService.findWardToCare(principal, request, pageable);
         return new Result<>("200", "피보호자 검색이 성공했습니다.", response);
     }
 

@@ -3,6 +3,8 @@ package tohear.hearo.care.service;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -39,23 +41,29 @@ public class CareService {
     private final WardUserRepository wardUserRepository;
 
     // 보호자가 피보호자를 검색
-    public FindWardToCareResponse findWardToCare(MedicalUserPrincipal principal, FindWardToCareRequest request) {
+    public FindWardToCareResponse findWardToCare(MedicalUserPrincipal principal, FindWardToCareRequest request, Pageable pageable) {
 
         if (principal.getUserType() != UserType.GUARDIAN) {
             throw new IllegalArgumentException("보호자만 검색할 수 있는 기능입니다.");
         }
 
+
         List<FindWardToCareDto> wardUserList = new ArrayList<>(); // FindWardToCareDto 객체를 담을 리스트 생성
 
-        List<WardUser> WardUserList = careRepository.findWardUserToCare(request.getWardUserId());
+        Page<WardUser> wardUserPage = careRepository.findWardUserToCare(request.getWardUserId(), pageable);
 
-        for (WardUser wardUser : WardUserList) {
+        for (WardUser wardUser : wardUserPage) {
             FindWardToCareDto wardSearchDto = new FindWardToCareDto(wardUser.getId(), 
                                                                     wardUser.getName());
             wardUserList.add(wardSearchDto);
         }
 
-        return new FindWardToCareResponse(wardUserList.size(), wardUserList);
+        return new FindWardToCareResponse(
+            wardUserPage.getTotalElements(),
+            wardUserPage.getNumber(),
+            wardUserPage.getSize(),
+            wardUserPage.hasNext(),
+            wardUserList);
         
     }
 

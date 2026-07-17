@@ -11,7 +11,10 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class FindWardToCareResponse {
 
-    private int totalCount; // 검색이 완료된 피보호자의 총 개수
+    private long totalCount; // 검색이 완료된 피보호자의 총 개수
+    private int currentPage;
+    private int pageSize;
+    private boolean hasNext;
     private List<FindWardToCareDto> wardUserList; // 검색이 완료된 피보호자 리스트
 
 }

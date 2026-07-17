@@ -2,6 +2,10 @@ package tohear.hearo.care.repository;
 
 import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+
 import com.querydsl.jpa.impl.JPAQueryFactory;
 
 import lombok.RequiredArgsConstructor;
@@ -39,12 +43,26 @@ public class CareRepositoryImpl implements CareRepositoryCustom {
     }
 
     @Override
-    public List<WardUser> findWardUserToCare(String wardUserId) {
-        return queryFactory
-                .select(QWardUser.wardUser)
-                .from(QWardUser.wardUser)
-                .where(QWardUser.wardUser.id.contains(wardUserId))
-                .fetch();
+    public Page<WardUser> findWardUserToCare(String wardUserId, Pageable pageable) {
+        List<WardUser> wardUserList = queryFactory
+            .select(QWardUser.wardUser)
+            .from(QWardUser.wardUser)
+            .where(QWardUser.wardUser.id.contains(wardUserId))
+            .orderBy(QWardUser.wardUser.id.asc())
+            .offset(pageable.getOffset())
+            .limit(pageable.getPageSize())
+            .fetch();
+
+        Long result = queryFactory
+            .select(QWardUser.wardUser.count())
+            .from(QWardUser.wardUser)
+            .where(QWardUser.wardUser.id.contains(wardUserId))
+            .fetchOne();
+
+        long count = result != null ? result : 0L;
+
+        return new PageImpl<>(wardUserList, pageable, count);
+                    
     }
 
     @Override
