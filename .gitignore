@@ -13,7 +13,7 @@ frontend/dist/
 # Environment
 .env
 frontend/.env
-src/main/resources/application.properties
+k8s/hearo-backend-secret.yaml
 
 # Logs
 *.log

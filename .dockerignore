@@ -1,0 +1,11 @@
+.git
+.github
+.gradle
+.gradle-home
+build
+bin
+out
+frontend
+node_modules
+*.log
+.env
