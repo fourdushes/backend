@@ -11,9 +11,10 @@ frontend/node_modules/
 frontend/dist/
 
 # Environment
-.env
+.env.example
 frontend/.env
-k8s/hearo-backend-secret.yaml
+k8s/hearo-backend-secret.example.yaml
+.env
 
 # Logs
 *.log

@@ -16,8 +16,7 @@ spec:
     spec:
       containers:
         - name: hearo-backend
-          # GitHub Actions에서 새 commit SHA 태그로 변경합니다.
-          image: 123456789012.dkr.ecr.ap-northeast-2.amazonaws.com/hearo-backend:latest
+          image: 225989329853.dkr.ecr.ap-northeast-2.amazonaws.com/hearo-backend
           imagePullPolicy: Always
           ports:
             - name: http
@@ -26,10 +25,7 @@ spec:
             - name: SERVER_PORT
               value: "8081"
             - name: DB_URL
-              valueFrom:
-                secretKeyRef:
-                  name: hearo-backend-secret
-                  key: db-url
+              value: "jdbc:mysql://mysql:3306/hearO?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul&characterEncoding=UTF-8"
             - name: DB_USERNAME
               valueFrom:
                 secretKeyRef:
