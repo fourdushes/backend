@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: hearo-backend
-          image: 225989329853.dkr.ecr.ap-northeast-2.amazonaws.com/hearo-backend
+          image: 225989329853.dkr.ecr.ap-northeast-2.amazonaws.com/hearo-backend:a16631e4162be0a56921544323fc2b403e28f7d7
           imagePullPolicy: Always
           ports:
             - name: http
@@ -25,7 +25,10 @@ spec:
             - name: SERVER_PORT
               value: "8081"
             - name: DB_URL
-              value: "jdbc:mysql://mysql:3306/hearO?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul&characterEncoding=UTF-8"
+              valueFrom:
+                secretKeyRef:
+                  name: hearo-backend-secret
+                  key: db-url
             - name: DB_USERNAME
               valueFrom:
                 secretKeyRef:
