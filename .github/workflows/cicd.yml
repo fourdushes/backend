@@ -1,6 +1,12 @@
 name: Backend CI/CD
 
 on:
+  pull_request:
+    branches:
+      - main
+    paths-ignore:
+      - "k8s/**"
+      - "**/*.md"
   push:
     branches:
       - main
@@ -10,11 +16,10 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
-  id-token: write
+  contents: read
 
 concurrency:
-  group: hearo-backend-production
+  group: hearo-backend-${{ github.ref }}
   cancel-in-progress: false
 
 env:
@@ -73,10 +78,36 @@ jobs:
       - name: Test with Gradle
         run: ./gradlew clean test --no-daemon
 
-  build-and-push:
-    name: Build and push to ECR
+  build:
+    name: Build Docker image
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     needs: test
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image without pushing
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          tags: hearo-backend:pr-${{ github.event.pull_request.number }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  build-and-push:
+    name: Build and push to ECR
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    needs: test
+    permissions:
+      contents: read
+      id-token: write
 
     outputs:
       image: ${{ steps.meta.outputs.image }}
@@ -120,6 +151,8 @@ jobs:
     name: Update Kubernetes manifest for Argo CD
     runs-on: ubuntu-latest
     needs: build-and-push
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout source
