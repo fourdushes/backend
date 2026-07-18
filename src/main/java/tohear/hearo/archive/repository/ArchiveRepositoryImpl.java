@@ -24,7 +24,8 @@ public class ArchiveRepositoryImpl implements ArchiveRepositoryCustom {
         List<Archive> archiveList = queryFactory
             .selectFrom(QArchive.archive)
             .join(QArchive.archive.wardUser, QWardUser.wardUser)
-            .where(QWardUser.wardUser.name.eq(userId))
+            .where(QWardUser.wardUser.id.eq(userId))
+            .orderBy(QArchive.archive.id.asc())
             .offset(pageable.getOffset())
             .limit(pageable.getPageSize())
             .fetch();
@@ -33,7 +34,7 @@ public class ArchiveRepositoryImpl implements ArchiveRepositoryCustom {
             .select(QArchive.archive.count())
             .from(QArchive.archive)
             .join(QArchive.archive.wardUser, QWardUser.wardUser)
-            .where(QWardUser.wardUser.name.eq(userId))
+            .where(QWardUser.wardUser.id.eq(userId))
             .fetchOne();
 
         long count = result != null ? result : 0L;
