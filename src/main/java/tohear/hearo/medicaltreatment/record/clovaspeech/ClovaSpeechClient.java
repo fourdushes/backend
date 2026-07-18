@@ -273,5 +273,4 @@ public class ClovaSpeechClient {
 			throw new RuntimeException(e);
 		}
 	}
-
 }

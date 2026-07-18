@@ -5,7 +5,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import tohear.hearo.global.Result;
+import tohear.hearo.global.response.Result;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -21,7 +21,12 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(IllegalStateException.class)
     public Result<?> handleIllegalStateException(IllegalStateException e) {
-        // 이제 500으로 안 떨어지고, 준형님이 만든 이쁜 Result 포맷으로 나갑니다!
         return new Result<>("400", e.getMessage(), null); 
     }
+
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    @ExceptionHandler(AuthenticationException.class)
+    public Result<?> handleAuthenticationException(AuthenticationException e) {
+        return new Result<>("401", e.getMessage(), null); 
+    }    
 }
