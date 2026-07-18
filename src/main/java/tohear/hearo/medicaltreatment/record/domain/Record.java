@@ -38,7 +38,7 @@ public class Record {
     }
 
     public Record(String recordFile, LocalDateTime recordDate, Archive archive, WardUser wardUser) {
-        this.recordFile = "https://my-bucket.s3.ap-northeast-2.amazonaws.com/audio/" + recordFile;
+        this.recordFile = recordFile;
         this.recordDate = recordDate;
         this.archive = archive;
         this.wardUser = wardUser;
