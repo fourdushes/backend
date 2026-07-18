@@ -267,14 +267,4 @@ public class ClovaSpeechClient {
 			throw new RuntimeException(e);
 		}
 	}
-
-	public static void main(String[] args) {
-		final ClovaSpeechClient clovaSpeechClient = new ClovaSpeechClient();
-		NestRequestEntity requestEntity = new NestRequestEntity();
-		final String result =
-			clovaSpeechClient.upload(new File("/data/sample.mp4"), requestEntity);
-		//final String result = clovaSpeechClient.url("file URL", requestEntity); 
-		//final String result = clovaSpeechClient.objectStorage("Object Storage key", requestEntity);
-		System.out.println(result);
-	}
 }
