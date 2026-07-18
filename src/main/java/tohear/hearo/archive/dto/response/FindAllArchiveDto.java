@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
 public class FindAllArchiveDto {
 
     private long archiveId;
-    private String arhciveName;
+    private String archiveName;
     private LocalDateTime archiveDate;
     
 
