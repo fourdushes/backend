@@ -7,6 +7,5 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class SaveCareRequest {
 
-    private String guardUserId;
     private String wardUserId;
 }

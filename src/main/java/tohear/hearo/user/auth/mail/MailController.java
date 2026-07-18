@@ -6,9 +6,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import lombok.RequiredArgsConstructor;
-import tohear.hearo.global.Result;
-import tohear.hearo.global.dto.EmailCheckNumberDto;
-import tohear.hearo.global.dto.EmailRequestDto;
+import tohear.hearo.global.response.Result;
+import tohear.hearo.user.auth.dto.request.EmailCheckNumberDto;
+import tohear.hearo.user.auth.dto.request.EmailRequestDto;
 
 @RestController
 @RequestMapping("/api/mail")

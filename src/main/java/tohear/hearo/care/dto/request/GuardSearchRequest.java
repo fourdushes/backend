@@ -5,6 +5,7 @@ import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
+// 안씀
 public class GuardSearchRequest {
 
     private String wardUserId;
