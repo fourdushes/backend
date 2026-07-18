@@ -10,4 +10,6 @@ public interface CareRepository extends JpaRepository<Care, Long>, CareRepositor
 
     Optional<Care> findByIdAndWardUser_Id(Long careId, String wardUserId);
 
+    
+
 }

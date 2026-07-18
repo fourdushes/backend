@@ -98,6 +98,19 @@ public class CareRepositoryImpl implements CareRepositoryCustom {
 
         return result != null; // result가 null이면 F(없음), result가 1이면 T(이미 존재)
     }
+
+    @Override
+    public List<Care> findByUserId(String id) {
+
+        return queryFactory
+            .select(QCare.care)
+            .from(QCare.care)
+            .join(QCare.care.wardUser, QWardUser.wardUser)
+            .where(QWardUser.wardUser.id.eq(id),
+                   QCare.care.careState.in(CareState.APPROVED)
+                )
+            .fetch();
+    }
     
 
 }

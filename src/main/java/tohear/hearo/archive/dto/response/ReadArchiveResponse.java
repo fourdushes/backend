@@ -9,11 +9,12 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class ArchiveResponse {
+public class ReadArchiveResponse {
 
     private Long archiveId;
     private String title;
     private LocalDateTime archiveDate;
     private String text;
     private String allChatText;
+
 }

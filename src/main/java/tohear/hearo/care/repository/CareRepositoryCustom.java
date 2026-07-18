@@ -17,5 +17,5 @@ public interface CareRepositoryCustom {
     List<Care> findCareByGuardUser(GuardUser guardUser); // 보호자가 연결을 신청한 Care 조회
     List<Care> findCareByWardUser(WardUser wardUser); // 피보호자가 연결을 신청한 Care 조회
     boolean existsActiveCare(GuardUser guardUser, WardUser wardUser); // 중복 연결을 막기 위해 조회
-
+    List<Care> findByUserId(String id); // 피보호자 유저 아이디로 보호자들 조회
 }
