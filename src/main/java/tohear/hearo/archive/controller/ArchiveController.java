@@ -31,11 +31,20 @@ public class ArchiveController {
         return new Result("200", "진료 기록 조회에 성공했습니다.", response);
     }
 
-    @GetMapping("/list")
-    public Result getMethodName(@CurrentMedicalUser MedicalUserPrincipal principal,
+    // 피보호자가 본인의 진료 리스트를 확인함
+    @GetMapping("/list/for-ward")
+    public Result getListForWard(@CurrentMedicalUser MedicalUserPrincipal principal,
         @PageableDefault(page = 0, size = 10, sort = "id", direction = Sort.Direction.ASC) Pageable pageable) {
         FindAllArchiveResponse response = archiveService.findAllByUserId(principal, pageable);
         return new Result("200", "진료 리스트 조회에 성공했습니다", response);
     }
-    
+
+    // 보호자가 보호자의 진료 리스트를 확인함
+    @GetMapping("/{wardUserId}/list/for-guard")
+    public Result getListForGuard(@CurrentMedicalUser MedicalUserPrincipal principal,
+        @PathVariable String wardUserId,
+        @PageableDefault(page = 0, size = 10, sort = "id", direction = Sort.Direction.ASC) Pageable pageable) {
+        FindAllArchiveResponse response = archiveService.findAllByUserId2(principal, pageable, wardUserId);
+        return new Result("200", "진료 리스트 조회에 성공했습니다", response);
+    }
 }
