@@ -80,4 +80,20 @@ public class MailService {
 
         return isCorrect;
     }
+
+    // 입력된 인증번호와 저장된 인증번호가 같은지 확인
+    public void validateVerifiedEmail(String mail) {
+        String verified = redisTemplate.opsForValue().get("mail-verified:" + mail);
+
+        if (!"true".equals(verified)) {
+            throw new IllegalArgumentException(
+                "이메일 인증이 완료되지 않았습니다. 이메일 인증을 먼저 진행해주세요."
+            );
+        }
+    }
+
+    // 회원가입 완료 시 인증여부 삭제
+    public void consumeVerifiedEmail(String email) {
+        redisTemplate.delete("mail-verified:" + email);
+    }
 }

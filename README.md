@@ -224,7 +224,7 @@ curl -i http://localhost:8081
 |---|---|---|---|
 | `POST` | `/api/mail/send` | 불필요 | 이메일 인증번호 발송 |
 | `POST` | `/api/mail/check` | 불필요 | 이메일 인증번호 확인 |
-| `POST` | `/api/users/join` | 불필요 | 사용자 유형별 회원가입 |
+| `POST` | `/api/users/join` | 불필요 | 이메일 인증 및 중복 확인 후 사용자 유형별 회원가입 |
 | `POST` | `/api/users/login` | 불필요 | 로그인 및 토큰 발급 |
 | `POST` | `/api/users/find-id` | 불필요 | 이메일로 아이디 찾기 |
 | `POST` | `/api/users/to-change-password` | 불필요 | 비밀번호 변경 전 사용자 검증 |
@@ -291,7 +291,7 @@ curl -i http://localhost:8081
 |---|---|---|
 | 이메일 인증번호 발송 | `email` | 인증번호를 받을 이메일 |
 | 이메일 인증번호 확인 | `email`, `checkNumber` | 이메일과 6자리 인증번호 |
-| 회원가입 | `id`, `name`, `email`, `password`, `userType` | 사용자 유형별 계정 생성 |
+| 회원가입 | `id`, `name`, `email`, `password`, `userType` | 이메일 인증 완료 후 사용자 유형별 계정 생성 |
 | 로그인 | `id`, `password` | 로그인 정보 |
 | 아이디 찾기 | `name`, `email` | 이름과 이메일로 아이디 조회 |
 | 비밀번호 변경 사전 인증 | `name`, `email` | 이메일 인증 상태와 사용자 확인 |
@@ -305,7 +305,7 @@ curl -i http://localhost:8081
 
 `userType`에는 코드에 정의된 `WARD`, `GUARDIAN`, `INSTITUTIONS` 중 하나를 사용합니다.
 
-> 현재 회원가입 로직은 이메일 인증 완료 여부를 검사하지 않습니다. 이메일 인증 완료 상태는 비밀번호 변경 사전 인증 과정에서 확인합니다.
+> 회원가입 시 Redis의 이메일 인증 완료 상태를 확인하고 세 사용자 테이블 전체에서 이메일 중복을 검사합니다. 가입 성공 후 해당 이메일의 인증 완료 상태는 삭제됩니다.
 
 ---
 
@@ -433,6 +433,7 @@ curl -X POST http://localhost:8081/api/medical-treatment/institution/chat-rooms/
 - Redis가 `6379` 포트에서 실행 중인지 확인합니다.
 - 이메일 인증번호는 `mail:<email>` 키로 3분간 저장됩니다.
 - 인증 성공 상태는 `mail-verified:<email>` 키로 10분간 유지됩니다.
+- 회원가입 성공 시 사용한 `mail-verified:<email>` 키는 즉시 삭제됩니다.
 
 ### JWT 인증 실패
 

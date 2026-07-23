@@ -62,4 +62,21 @@ public class CommonUserService {
         }
     }
 
+    // 3개의 테이블에서 회원가입시 이메일 중복이 있는지 체크
+    public boolean existsByEmail(String mail) {
+        String standardEmail = mail.trim().toLowerCase();
+
+        return wardUserRepository.existsByEmail(standardEmail)
+                || guardUserRepository.existsByEmail(standardEmail)
+                || institutionsUserRepository.existsByEmail(standardEmail);
+
+    }
+
+    // 중복이 있다면 오류 발생
+    public void validateEmailAvailable(String email) {
+        if (existsByEmail(email)) {
+            throw new IllegalArgumentException("이미 가입된 이메일입니다.");
+        }
+    }
+
 }
