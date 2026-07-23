@@ -22,6 +22,8 @@ import org.springframework.stereotype.Component;
 
 import com.google.gson.Gson;
 
+import tohear.hearo.global.exception.SpeechRecognitionException;
+
 @Component
 public class ClovaSpeechClient {
 
@@ -195,6 +197,24 @@ public class ClovaSpeechClient {
 		}
 	}
 
+	public static class ClovaSpeechResponse {
+		private String result;
+		private String message;
+		private String text;
+
+		public String getResult() {
+			return result;
+		}
+
+		public String getMessage() {
+			return message;
+		}
+
+		public String getText() {
+			return text;
+		}
+	}
+
 	/**
 	 * recognize media using URL (외부 파일 URL로 음성 인식 요청)
 	 * @param url required, the media URL (필수 파라미터, 외부 파일 URL)
@@ -267,10 +287,37 @@ public class ClovaSpeechClient {
 
 	private String execute(HttpPost httpPost) {
 		try (final CloseableHttpResponse httpResponse = httpClient.execute(httpPost)) {
+			final int statusCode = httpResponse.getStatusLine().getStatusCode();
 			final HttpEntity entity = httpResponse.getEntity();
-			return EntityUtils.toString(entity, StandardCharsets.UTF_8);
+			final String responseBody = entity == null
+				? ""
+				: EntityUtils.toString(entity, StandardCharsets.UTF_8);
+
+			if (statusCode < 200 || statusCode >= 300) {
+				throw new SpeechRecognitionException(
+					"음성 변환 서비스 요청에 실패했습니다. (HTTP " + statusCode + ")"
+				);
+			}
+
+			final ClovaSpeechResponse response;
+			try {
+				response = gson.fromJson(responseBody, ClovaSpeechResponse.class);
+			} catch (RuntimeException e) {
+				throw new SpeechRecognitionException("음성 변환 서비스 응답을 처리하지 못했습니다.", e);
+			}
+
+			if (response == null || !"COMPLETED".equalsIgnoreCase(response.getResult())) {
+				throw new SpeechRecognitionException("음성 변환 서비스가 변환을 완료하지 못했습니다.");
+			}
+			if (response.getText() == null || response.getText().isBlank()) {
+				throw new SpeechRecognitionException("음성 변환 결과가 비어 있습니다.");
+			}
+
+			return response.getText();
+		} catch (SpeechRecognitionException e) {
+			throw e;
 		} catch (Exception e) {
-			throw new RuntimeException(e);
+			throw new SpeechRecognitionException("음성 변환 서비스 연결에 실패했습니다.", e);
 		}
 	}
 }

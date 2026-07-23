@@ -9,9 +9,11 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import lombok.RequiredArgsConstructor;
+import tohear.hearo.ai.dto.AiRequest;
+import tohear.hearo.ai.dto.AiResponse;
+import tohear.hearo.ai.service.AiService;
 import tohear.hearo.archive.domain.Archive;
 import tohear.hearo.archive.repository.ArchiveRepository;
-import tohear.hearo.user.auth.principal.MedicalUserPrincipal;
 import tohear.hearo.medicaltreatment.chat.domain.ChatMessage;
 import tohear.hearo.medicaltreatment.chat.domain.ChatMessageType;
 import tohear.hearo.medicaltreatment.chat.domain.ChatRoom;
@@ -28,12 +30,11 @@ import tohear.hearo.medicaltreatment.medicalrequest.domain.MedicalRequest;
 import tohear.hearo.medicaltreatment.medicalrequest.domain.MedicalRequestStatus;
 import tohear.hearo.medicaltreatment.medicalrequest.dto.response.MedicalRequestResponse;
 import tohear.hearo.medicaltreatment.medicalrequest.repository.MedicalRequestRepository;
-import tohear.hearo.medicaltreatment.record.domain.Record;
+import tohear.hearo.medicaltreatment.record.dto.CompletedRecord;
 import tohear.hearo.medicaltreatment.record.dto.request.CompleteRecordRequest;
-import tohear.hearo.medicaltreatment.record.dto.response.CompleteRecordResponse;
 import tohear.hearo.medicaltreatment.record.service.RecordService;
-import tohear.hearo.medicaltreatment.record.repository.MedicalRecordLookupRepository;
 import tohear.hearo.user.auth.domain.UserType;
+import tohear.hearo.user.auth.principal.MedicalUserPrincipal;
 import tohear.hearo.user.institution.InstitutionsUser;
 import tohear.hearo.user.ward.WardUser;
 import tohear.hearo.user.ward.WardUserRepository;
@@ -44,7 +45,6 @@ import tohear.hearo.user.ward.WardUserRepository;
 public class MedicalTreatmentService {
 
     private static final String FIRST_MESSAGE = "어디가 불편해서 오셨나요?";
-    private static final String RECORD_FILE_PREFIX = "https://my-bucket.s3.ap-northeast-2.amazonaws.com/audio/";
     private static final Set<MedicalRequestStatus> ACTIVE_REQUEST_STATUSES = Set.of(
             MedicalRequestStatus.REQUESTED,
             MedicalRequestStatus.ACCEPTED,
@@ -57,7 +57,7 @@ public class MedicalTreatmentService {
     private final ChatRoomRepository chatRoomRepository;
     private final ChatMessageRepository chatMessageRepository;
     private final RecordService recordService;
-    private final MedicalRecordLookupRepository recordLookupRepository;
+    private final AiService aiService;
 
     public List<InstitutionResponse> searchInstitutions(MedicalUserPrincipal principal, String keyword) {
         requireType(principal, UserType.WARD);
@@ -181,23 +181,19 @@ public class MedicalTreatmentService {
         recordRequest.setFile(file);
         recordRequest.setArchiveId(chatRoom.getArchive().getId());
         recordRequest.setWardUserId(chatRoom.getWardUser().getId());
-        CompleteRecordResponse recordResponse = recordService.completeRecord(recordRequest);
-        String transcript = recordResponse.getRecordWord();
-        if (transcript == null || transcript.isBlank()) {
+        CompletedRecord completedRecord = recordService.completeRecord(recordRequest);
+        String recordText = completedRecord.recordText();
+        if (recordText == null || recordText.isBlank()) {
             throw new IllegalStateException("음성 변환 결과가 비어 있습니다.");
         }
 
-        String recordFile = RECORD_FILE_PREFIX + file.getOriginalFilename();
-        Record record = recordLookupRepository
-                .findFirstByArchiveIdAndRecordFileOrderByRecordDateDescIdDesc(chatRoom.getArchive().getId(), recordFile)
-                .orElseThrow(() -> new IllegalStateException("Record와 Archive 연결에 실패했습니다."));
         ChatMessage message = chatMessageRepository.save(new ChatMessage(
                 chatRoom,
                 MessageSenderType.INSTITUTION_USER,
                 principal.getUserId(),
                 ChatMessageType.VOICE_TRANSCRIPT,
-                transcript,
-                record));
+                recordText,
+                completedRecord.record()));
         return toMessageResponse(message, chatRoom, principal);
     }
 
@@ -214,10 +210,18 @@ public class MedicalTreatmentService {
                 .stream()
                 .filter(message -> message.getSenderType() != MessageSenderType.SYSTEM)
                 .filter(message -> message.getContent() != null && !message.getContent().isBlank())
-                .map(message -> (message.getSenderType() == MessageSenderType.WARD_USER ? "나: " : "상대: ")
+                .map(message -> (message.getSenderType() == MessageSenderType.WARD_USER ? "나: " : "기관: ")
                         + message.getContent().trim())
                 .reduce((left, right) -> left + System.lineSeparator() + right)
                 .orElse("");
+
+        AiResponse response = aiService.getSummary(
+            new AiRequest(chatRoom.getWardUser().getId(),
+                          chatRoom.getArchive().getId(),
+                          allChatText));
+
+        chatRoom.getArchive().updateText(response.getSummary());
+
 
         chatRoom.getArchive().updateAllChatText(allChatText);
         chatRoom.getMedicalRequest().complete();

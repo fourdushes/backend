@@ -19,6 +19,9 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import tohear.hearo.ai.dto.AiRequest;
+import tohear.hearo.ai.dto.AiResponse;
+import tohear.hearo.ai.service.AiService;
 import tohear.hearo.archive.domain.Archive;
 import tohear.hearo.archive.repository.ArchiveRepository;
 import tohear.hearo.user.auth.principal.MedicalUserPrincipal;
@@ -34,9 +37,8 @@ import tohear.hearo.medicaltreatment.medicalrequest.domain.MedicalRequest;
 import tohear.hearo.medicaltreatment.medicalrequest.domain.MedicalRequestStatus;
 import tohear.hearo.medicaltreatment.medicalrequest.repository.MedicalRequestRepository;
 import tohear.hearo.medicaltreatment.record.domain.Record;
-import tohear.hearo.medicaltreatment.record.dto.response.CompleteRecordResponse;
+import tohear.hearo.medicaltreatment.record.dto.CompletedRecord;
 import tohear.hearo.medicaltreatment.record.service.RecordService;
-import tohear.hearo.medicaltreatment.record.repository.MedicalRecordLookupRepository;
 import tohear.hearo.user.auth.domain.UserType;
 import tohear.hearo.user.institution.InstitutionsUser;
 import tohear.hearo.user.ward.WardUser;
@@ -52,7 +54,7 @@ class MedicalTreatmentServiceTest {
     @Mock ChatRoomRepository chatRoomRepository;
     @Mock ChatMessageRepository chatMessageRepository;
     @Mock RecordService recordService;
-    @Mock MedicalRecordLookupRepository recordLookupRepository;
+    @Mock AiService aiService;
 
     private MedicalTreatmentService service;
 
@@ -60,7 +62,7 @@ class MedicalTreatmentServiceTest {
     void setUp() {
         service = new MedicalTreatmentService(
                 institutionRepository, wardUserRepository, medicalRequestRepository, archiveRepository,
-                chatRoomRepository, chatMessageRepository, recordService, recordLookupRepository);
+                chatRoomRepository, chatMessageRepository, recordService, aiService);
     }
 
     @Test
@@ -168,10 +170,7 @@ class MedicalTreatmentServiceTest {
         Record record = new Record("voice.webm", LocalDateTime.now(), room.getArchive(), room.getWardUser());
         ReflectionTestUtils.setField(record, "id", 30L);
         when(chatRoomRepository.findByIdForUpdate(20L)).thenReturn(Optional.of(room));
-        when(recordService.completeRecord(any())).thenReturn(new CompleteRecordResponse("열은 없으신가요?", "now"));
-        when(recordLookupRepository.findFirstByArchiveIdAndRecordFileOrderByRecordDateDescIdDesc(
-                10L, "https://my-bucket.s3.ap-northeast-2.amazonaws.com/audio/voice.webm"))
-                .thenReturn(Optional.of(record));
+        when(recordService.completeRecord(any())).thenReturn(new CompletedRecord(record, "열은 없으신가요?"));
         when(chatMessageRepository.save(any(ChatMessage.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         var response = service.completeRecording(institutionPrincipal(), 20L, file);
@@ -191,7 +190,7 @@ class MedicalTreatmentServiceTest {
         assertThatThrownBy(() -> service.completeRecording(wardPrincipal(), 20L, file))
                 .isInstanceOf(IllegalArgumentException.class);
 
-        when(recordService.completeRecord(any())).thenReturn(new CompleteRecordResponse(" ", "now"));
+        when(recordService.completeRecord(any())).thenReturn(new CompletedRecord(null, " "));
         assertThatThrownBy(() -> service.completeRecording(institutionPrincipal(), 20L, file))
                 .isInstanceOf(IllegalStateException.class);
         verify(chatMessageRepository, never()).save(any(ChatMessage.class));
@@ -205,11 +204,14 @@ class MedicalTreatmentServiceTest {
         when(chatRoomRepository.findByIdForUpdate(20L)).thenReturn(Optional.of(room));
         when(chatMessageRepository.findAllByChatRoomIdOrderByCreatedAtAscIdAsc(20L))
                 .thenReturn(List.of(first, second));
+        when(aiService.getSummary(any(AiRequest.class)))
+                .thenReturn(new AiResponse("ward", 10L, "전체 대화", "목 통증 진료 요약"));
 
         service.completeTreatment(wardPrincipal(), 20L);
 
         assertThat(room.getArchive().getAllChatText()).isEqualTo(
-                "상대: 어디가 불편해서 오셨나요?" + System.lineSeparator() + "나: 목이 아파요.");
+                "기관: 어디가 불편해서 오셨나요?" + System.lineSeparator() + "나: 목이 아파요.");
+        assertThat(room.getArchive().getText()).isEqualTo("목 통증 진료 요약");
         assertThat(room.getStatus()).isEqualTo(ChatRoomStatus.COMPLETED);
         assertThat(room.getMedicalRequest().getStatus()).isEqualTo(MedicalRequestStatus.COMPLETED);
     }

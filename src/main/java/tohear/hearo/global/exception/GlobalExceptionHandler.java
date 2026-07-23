@@ -24,9 +24,27 @@ public class GlobalExceptionHandler {
         return new Result<>("400", e.getMessage(), null); 
     }
 
+    @ResponseStatus(HttpStatus.BAD_GATEWAY)
+    @ExceptionHandler(SpeechRecognitionException.class)
+    public Result<?> handleSpeechRecognitionException(SpeechRecognitionException e) {
+        return new Result<>("502", e.getMessage(), null);
+    }
+
+    @ResponseStatus(HttpStatus.BAD_GATEWAY)
+    @ExceptionHandler(RecordStorageException.class)
+    public Result<?> handleRecordStorageException(RecordStorageException e) {
+        return new Result<>("502", e.getMessage(), null);
+    }
+
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
     @ExceptionHandler(AuthenticationException.class)
     public Result<?> handleAuthenticationException(AuthenticationException e) {
         return new Result<>("401", e.getMessage(), null); 
-    }    
+    }
+
+    @ResponseStatus(HttpStatus.BAD_GATEWAY)
+    @ExceptionHandler(AiSummaryException.class)
+    public Result<?> handleAiSummaryException(AiSummaryException e) {
+        return new Result<>("502", e.getMessage(), null);
+    }
 }
