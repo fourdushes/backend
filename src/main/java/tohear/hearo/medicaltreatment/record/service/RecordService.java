@@ -13,9 +13,10 @@ import tohear.hearo.archive.service.ArchiveService;
 import tohear.hearo.medicaltreatment.record.clovaspeech.ClovaSpeechClient;
 import tohear.hearo.medicaltreatment.record.clovaspeech.ClovaSpeechClient.NestRequestEntity;
 import tohear.hearo.medicaltreatment.record.domain.Record;
+import tohear.hearo.medicaltreatment.record.dto.CompletedRecord;
 import tohear.hearo.medicaltreatment.record.dto.request.CompleteRecordRequest;
-import tohear.hearo.medicaltreatment.record.dto.response.CompleteRecordResponse;
 import tohear.hearo.medicaltreatment.record.repository.RecordRepository;
+import tohear.hearo.medicaltreatment.record.storage.RecordStorageService;
 import tohear.hearo.user.ward.WardUserService;
 
 @Service
@@ -26,9 +27,10 @@ public class RecordService {
     private final ClovaSpeechClient clovaSpeechClient;
     private final WardUserService wardUserService;
     private final ArchiveService archiveService;
+    private final RecordStorageService recordStorageService;
 
     // 녹음 종료시 녹음파일을 텍스트화 하는 메서드
-    public CompleteRecordResponse completeRecord(CompleteRecordRequest request) throws IOException {
+    public CompletedRecord completeRecord(CompleteRecordRequest request) throws IOException {
 
         MultipartFile multipartFile = request.getFile();
         String originalFileName = multipartFile.getOriginalFilename();
@@ -42,25 +44,30 @@ public class RecordService {
             multipartFile.transferTo(tempPath);
 
             NestRequestEntity requestEntity = new NestRequestEntity();
-            String result = clovaSpeechClient.upload(
+            String recordText = clovaSpeechClient.upload(
                 tempPath.toFile(),
                 requestEntity
             );
 
+            String objectKey = recordStorageService.upload(multipartFile, request.getArchiveId());
             Record record = new Record(
-                originalFileName,
+                objectKey,
                 LocalDateTime.now(),
                 archiveService.findById(request.getArchiveId()),
                 wardUserService.findById(request.getWardUserId())
             );
 
-            recordRepository.save(record);
-
-
-            return new CompleteRecordResponse(
-                result,
-                LocalDateTime.now().toString()
-            );
+            try {
+                Record savedRecord = recordRepository.saveAndFlush(record);
+                return new CompletedRecord(savedRecord, recordText);
+            } catch (RuntimeException e) {
+                try {
+                    recordStorageService.delete(objectKey);
+                } catch (RuntimeException cleanupException) {
+                    e.addSuppressed(cleanupException);
+                }
+                throw e;
+            }
         } finally {
             Files.deleteIfExists(tempPath);
         }
