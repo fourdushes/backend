@@ -8,7 +8,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import lombok.RequiredArgsConstructor;
-import tohear.hearo.global.security.JwtTokenProvider;
 import tohear.hearo.global.response.Result;
 import tohear.hearo.user.auth.domain.UserType;
 import tohear.hearo.user.auth.dto.request.ChangePasswordRequest;
@@ -18,6 +17,7 @@ import tohear.hearo.user.auth.dto.request.LoginUserRequest;
 import tohear.hearo.user.auth.dto.request.ToChangePasswordRequest;
 import tohear.hearo.user.auth.dto.response.LoginUserResponse;
 import tohear.hearo.user.auth.dto.response.ToChangePasswordResponse;
+import tohear.hearo.user.auth.mail.MailService;
 import tohear.hearo.user.auth.service.CommonUserService;
 import tohear.hearo.user.auth.service.UserService;
 
@@ -27,18 +27,24 @@ import tohear.hearo.user.auth.service.UserService;
 public class UserController {
 
     private final List<UserService> userServices;
-    private final JwtTokenProvider tokenProvider;
     private final CommonUserService commonUserService;
+    private final MailService mailService;
 
     @PostMapping("/join") // 회원 가입, 사용자 유형에 따라 다른 서비스 호출
     public Result join(@RequestBody JoinUserRequest request) {
+
+        mailService.validateVerifiedEmail(request.getEmail());
+        commonUserService.validateEmailAvailable(request.getEmail());
 
         UserService userService = userServices.stream()
                 .filter(service -> service.supports(request.getUserType()))
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("유효하지 않은 사용자 유형입니다."));
-        
+
         String userId = userService.join(request);
+
+        mailService.consumeVerifiedEmail(request.getEmail());
+
         return new Result<>("200", "회원 가입이 완료되었습니다.", userId);
     }
 

@@ -1,6 +1,7 @@
 package tohear.hearo.user.auth.mail;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -47,5 +48,24 @@ class MailServiceTest {
         assertThat(service.checkCode("user@test.com", "123456")).isFalse();
         verify(redisTemplate, never()).delete(any(String.class));
         verify(values, never()).set(any(String.class), any(String.class), any(Duration.class));
+    }
+
+    @Test
+    void verifiedEmailIsAcceptedAndConsumedAfterJoin() {
+        when(values.get("mail-verified:user@test.com")).thenReturn("true");
+
+        service.validateVerifiedEmail("user@test.com");
+        service.consumeVerifiedEmail("user@test.com");
+
+        verify(redisTemplate).delete("mail-verified:user@test.com");
+    }
+
+    @Test
+    void unverifiedEmailIsRejected() {
+        when(values.get("mail-verified:user@test.com")).thenReturn(null);
+
+        assertThatThrownBy(() -> service.validateVerifiedEmail("user@test.com"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("이메일 인증이 완료되지 않았습니다. 이메일 인증을 먼저 진행해주세요.");
     }
 }

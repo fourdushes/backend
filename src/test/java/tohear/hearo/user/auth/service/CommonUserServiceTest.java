@@ -60,4 +60,13 @@ class CommonUserServiceTest {
             .isInstanceOf(IllegalStateException.class)
             .hasMessage("이미 존재하는 회원입니다.");
     }
+
+    @Test
+    void duplicateEmailAcrossAnyUserTableIsRejectedCaseInsensitively() {
+        when(guardRepository.existsByEmail("user@test.com")).thenReturn(true);
+
+        assertThatThrownBy(() -> service.validateEmailAvailable(" User@Test.com "))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("이미 가입된 이메일입니다.");
+    }
 }
