@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 import lombok.RequiredArgsConstructor;
 import tohear.hearo.care.dto.request.ChangeCareStateRequest;
 import tohear.hearo.care.dto.request.CheckMainGuardRequest;
+import tohear.hearo.care.dto.request.DeleteCardRequest;
 import tohear.hearo.care.dto.request.FindWardToCareRequest;
 import tohear.hearo.care.dto.request.SaveCareRequest;
 import tohear.hearo.care.dto.response.ChangeCareStateResponse;
@@ -97,6 +98,14 @@ public class CareController {
     public Result checkMainGuard(@CurrentMedicalUser MedicalUserPrincipal principal, @RequestBody CheckMainGuardRequest request) {
         CheckMainGuardResponse response = careService.checkMainGuard(principal, request);
         return new Result<>("200", "메인보호자 변경이 완료되었습니다.", response);
+    }
+    
+    // 보호자 또는 피보호자 삭제 API
+    @PostMapping("/api/care/delete-care")
+    public Result deleteGuard(@CurrentMedicalUser MedicalUserPrincipal principal, @RequestBody DeleteCardRequest request) {
+        careService.deleteCareUser(principal, request);
+        
+        return new Result<>("200", "선택하신 보호자가 삭제되었습니다.", null);
     }
     
 

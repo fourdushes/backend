@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import tohear.hearo.care.domain.Care;
 import tohear.hearo.care.dto.request.ChangeCareStateRequest;
 import tohear.hearo.care.dto.request.CheckMainGuardRequest;
+import tohear.hearo.care.dto.request.DeleteCardRequest;
 import tohear.hearo.care.dto.request.FindWardToCareRequest;
 import tohear.hearo.care.dto.request.SaveCareRequest;
 import tohear.hearo.care.dto.response.ChangeCareStateResponse;
@@ -247,6 +248,27 @@ public class CareService {
         changeMainCare.changeMainGuard(); // 메인 보호자 재설정
 
         return new CheckMainGuardResponse(deleteMainCare.getId(), changeMainCare.getId());
+    }
+
+    @Transactional
+    public void deleteCareUser(MedicalUserPrincipal principal, DeleteCardRequest request) {
+
+        if (principal.getUserType() != UserType.WARD && principal.getUserType() != UserType.GUARDIAN) {
+            throw new IllegalArgumentException("피보호자, 보호자만 케어를 삭제할 수 있습니다.");
+        }
+
+        Care care = careRepository.findById(request.getDeleteCareId()).orElseThrow(()
+            -> new IllegalArgumentException("케어를 찾을 수 없습니다."));
+
+        boolean isWardOwner = principal.getUserType() == UserType.WARD && care.getWardUser().getId().equals(principal.getUserId());
+
+        boolean isGuardOwner = principal.getUserType() == UserType.GUARDIAN && care.getGuardUser().getId().equals(principal.getUserId());
+
+        if (!isWardOwner && !isGuardOwner) {
+            throw new IllegalArgumentException("삭제 권한이 없는 보호 관계입니다.");
+        }
+        
+        careRepository.deleteById(care.getId());
     }
 
 }

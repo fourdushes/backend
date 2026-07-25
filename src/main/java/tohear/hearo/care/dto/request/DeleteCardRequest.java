@@ -5,9 +5,7 @@ import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
-// 안씀
-public class WardCheckCareListRequest {
+public class DeleteCardRequest {
 
-    private String wardUserId; // 피보호자 아이디
-
+    private long deleteCareId;
 }
