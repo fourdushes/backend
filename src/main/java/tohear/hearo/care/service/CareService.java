@@ -11,11 +11,13 @@ import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import tohear.hearo.care.domain.Care;
 import tohear.hearo.care.dto.request.ChangeCareStateRequest;
+import tohear.hearo.care.dto.request.CheckMainGuardRequest;
 import tohear.hearo.care.dto.request.FindWardToCareRequest;
 import tohear.hearo.care.dto.request.SaveCareRequest;
 import tohear.hearo.care.dto.response.ChangeCareStateResponse;
 import tohear.hearo.care.dto.response.CheckCareListDto;
 import tohear.hearo.care.dto.response.CheckCareListResponse;
+import tohear.hearo.care.dto.response.CheckMainGuardResponse;
 import tohear.hearo.care.dto.response.FindWardToCareDto;
 import tohear.hearo.care.dto.response.FindWardToCareResponse;
 import tohear.hearo.care.dto.response.GuardSearchDto;
@@ -152,10 +154,19 @@ public class CareService {
             throw new IllegalArgumentException("피보호자만 연결 요청을 변경할 수 있습니다.");
         }
 
+        WardUser findWardUser = wardUserRepository.findById(principal.getUserId()).orElseThrow(() 
+                                        -> new IllegalArgumentException("피보호자를 찾을 수 없습니다."));
+
         Care findCare = careRepository.findByIdAndWardUser_Id(request.getCareId(),principal.getUserId()).orElseThrow(
             () -> new IllegalArgumentException("연결 요청을 찾을 수 없거나 변경 권한이 없습니다."));
 
         findCare.approve();
+        boolean existMainGuard = careRepository.existMainGuard(findWardUser); // 피보호자가 설정하는 첫번째 보호자인지 확인
+
+        if (!existMainGuard) {
+            findCare.changeMainGuard(); // 첫번째 보호자라면 메인 보호자 설정
+        }
+
         return new ChangeCareStateResponse(findCare.getId(), findCare.getCareState());
     }
 
@@ -181,23 +192,14 @@ public class CareService {
             throw new IllegalArgumentException("보호자만 피보호자를 조회할 수 있습니다.");
         }
 
-        List<WardSearchDto> wardSearchList = new ArrayList<>(); // WardSearchDto 객체를 담을 리스트 생성
 
         GuardUser findGuardUser = guardUserRepository.findById(principal.getUserId()).orElseThrow(() 
                                         -> new IllegalArgumentException("보호자를 찾을 수 없습니다."));
 
 
-        List<WardUser> WardUserList = careRepository.findWardUser(findGuardUser); // 보호자가 보호하고 있는 피보호자 리스트 뽑기
+        List<WardSearchDto> wardUserList = careRepository.findWardUser(findGuardUser); // 보호자가 보호하고 있는 피보호자 리스트 뽑기
 
-        // Care 엔티티에서 WardUser의 정보를 추출하여 WardSearchDto 객체를 생성하고 리스트 만들기
-        for (WardUser wardUser : WardUserList) {
-            WardSearchDto wardSearchDto = new WardSearchDto(wardUser.getId(), 
-                                                            wardUser.getName(), 
-                                                            wardUser.getUserType());
-            wardSearchList.add(wardSearchDto);
-        }
-
-        return new WardSearchResponse(wardSearchList.size(), wardSearchList);
+        return new WardSearchResponse(wardUserList.size(), wardUserList);
         
     }
 
@@ -208,24 +210,43 @@ public class CareService {
             throw new IllegalArgumentException("피보호자만 보호자를 조회할 수 있습니다.");
         }
 
-        List<GuardSearchDto> guardSearchList = new ArrayList<>(); // GuardSearchDto 객체를 담을 리스트 생성
-
         WardUser findWardUser = wardUserRepository.findById(principal.getUserId()).orElseThrow(() 
                                         -> new IllegalArgumentException("피보호자를 찾을 수 없습니다."));
 
 
-        List<GuardUser> GuardUserList = careRepository.findGuardUser(findWardUser); // 피보호자가 본인의 보호자 리스틑 뽑기
+        List<GuardSearchDto> guardUserList = careRepository.findGuardUser(findWardUser); // 피보호자가 본인의 보호자 리스틑 뽑기
 
-        // Care 엔티티에서 GuardUser의 정보를 추출하여 GuardSearchDto 객체를 생성하고 리스트 만들기
-        for (GuardUser guardUser : GuardUserList) {
-            GuardSearchDto guardSearchDto = new GuardSearchDto(guardUser.getId(), 
-                                                               guardUser.getName(), 
-                                                               guardUser.getUserType());
-            guardSearchList.add(guardSearchDto);
+
+        return new GuardSearchResponse(guardUserList.size(), guardUserList);
+        
+    }
+
+    // 메인 보호자가 제거 후 메인 보호자 재설정
+    @Transactional
+    public CheckMainGuardResponse checkMainGuard(MedicalUserPrincipal principal, CheckMainGuardRequest request) {
+
+        if (principal.getUserType() != UserType.WARD) {
+            throw new IllegalArgumentException("피보호자만 본인의 메인 보호자를 설정할 수 있습니다.");
         }
 
-        return new GuardSearchResponse(guardSearchList.size(), guardSearchList);
-        
+        WardUser wardUser = wardUserRepository.findById(principal.getUserId()).orElseThrow(() 
+                                        ->  new IllegalArgumentException("피보호자를 찾을 수 없습니다."));
+
+         GuardUser guardUser = guardUserRepository.findById(request.getChangeGuardUserId()).orElseThrow(() 
+                                        -> new IllegalArgumentException("보호자를 찾을 수 없습니다."));
+
+
+        Care deleteMainCare = careRepository.findMainGuard(wardUser).orElseThrow(() 
+            -> new IllegalArgumentException("메인 보호자 또는 피보호자를 찾을 수 없습니다."));
+
+        deleteMainCare.deleteMainGuard(); // 기존 메인 보호자 취소
+
+        Care changeMainCare = careRepository.findChangeMainGuard(wardUser, guardUser).orElseThrow(() 
+            -> new IllegalArgumentException("변경될 메인 보호자 또는 피보호자를 찾을 수 없습니다."));
+
+        changeMainCare.changeMainGuard(); // 메인 보호자 재설정
+
+        return new CheckMainGuardResponse(deleteMainCare.getId(), changeMainCare.getId());
     }
 
 }
