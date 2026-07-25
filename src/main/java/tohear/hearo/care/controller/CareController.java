@@ -11,10 +11,12 @@ import org.springframework.web.bind.annotation.RestController;
 
 import lombok.RequiredArgsConstructor;
 import tohear.hearo.care.dto.request.ChangeCareStateRequest;
+import tohear.hearo.care.dto.request.CheckMainGuardRequest;
 import tohear.hearo.care.dto.request.FindWardToCareRequest;
 import tohear.hearo.care.dto.request.SaveCareRequest;
 import tohear.hearo.care.dto.response.ChangeCareStateResponse;
 import tohear.hearo.care.dto.response.CheckCareListResponse;
+import tohear.hearo.care.dto.response.CheckMainGuardResponse;
 import tohear.hearo.care.dto.response.FindWardToCareResponse;
 import tohear.hearo.care.dto.response.GuardSearchResponse;
 import tohear.hearo.care.dto.response.SaveCareResponse;
@@ -90,5 +92,12 @@ public class CareController {
         return new Result<>("200", "보호자 검색이 성공했습니다.", response);
     }
 
+    // 메인 보호자 설정 API
+    @PostMapping("/api/care/check-main-guard")
+    public Result checkMainGuard(@CurrentMedicalUser MedicalUserPrincipal principal, @RequestBody CheckMainGuardRequest request) {
+        CheckMainGuardResponse response = careService.checkMainGuard(principal, request);
+        return new Result<>("200", "메인보호자 변경이 완료되었습니다.", response);
+    }
+    
 
 }

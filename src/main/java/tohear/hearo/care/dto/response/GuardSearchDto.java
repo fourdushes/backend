@@ -13,5 +13,5 @@ public class GuardSearchDto {
     private String guardUserId;
     private String guardUserName;
     private UserType userType;
-
+    private boolean mainGuardUser;
 }

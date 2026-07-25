@@ -22,8 +22,10 @@ import static org.mockito.Mockito.when;
 import tohear.hearo.care.domain.Care;
 import tohear.hearo.care.domain.CareState;
 import tohear.hearo.care.dto.request.ChangeCareStateRequest;
+import tohear.hearo.care.dto.request.CheckMainGuardRequest;
 import tohear.hearo.care.dto.request.FindWardToCareRequest;
 import tohear.hearo.care.dto.request.SaveCareRequest;
+import tohear.hearo.care.dto.response.WardSearchDto;
 import tohear.hearo.care.repository.CareRepository;
 import tohear.hearo.user.auth.domain.UserType;
 import tohear.hearo.user.auth.principal.MedicalUserPrincipal;
@@ -125,9 +127,11 @@ class CareServiceTest {
         ReflectionTestUtils.setField(care, "id", 7L);
         ChangeCareStateRequest request = new ChangeCareStateRequest();
         request.setCareId(7L);
+        when(wardRepository.findById("ward")).thenReturn(Optional.of(ward()));
         when(careRepository.findByIdAndWardUser_Id(7L, "ward")).thenReturn(Optional.of(care));
 
         assertThat(service.approveCare(principal, request).getCareState()).isEqualTo(CareState.APPROVED);
+        assertThat(care.getMainGuardUser()).isTrue();
         assertThat(service.rejectCare(principal, request).getCareState()).isEqualTo(CareState.REJECTED);
     }
 
@@ -136,6 +140,8 @@ class CareServiceTest {
         MedicalUserPrincipal principal = new MedicalUserPrincipal("other-ward", UserType.WARD);
         ChangeCareStateRequest request = new ChangeCareStateRequest();
         request.setCareId(7L);
+        when(wardRepository.findById("other-ward")).thenReturn(Optional.of(
+            new WardUser("other-ward", "다른 피보호자", "other@test.com", "pw", UserType.WARD)));
         when(careRepository.findByIdAndWardUser_Id(7L, "other-ward")).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.approveCare(principal, request))
@@ -147,12 +153,45 @@ class CareServiceTest {
     void searchesOnlyWardsReturnedByRepository() {
         MedicalUserPrincipal principal = new MedicalUserPrincipal("guard", UserType.GUARDIAN);
         when(guardRepository.findById("guard")).thenReturn(Optional.of(guard()));
-        when(careRepository.findWardUser(any(GuardUser.class))).thenReturn(List.of(ward()));
+        when(careRepository.findWardUser(any(GuardUser.class)))
+            .thenReturn(List.of(new WardSearchDto("ward", "피보호자", UserType.WARD, true)));
 
         var response = service.searchWardUsers(principal);
 
         assertThat(response.getTotalCount()).isOne();
         assertThat(response.getWardSearchList().getFirst().getUserType()).isEqualTo(UserType.WARD);
+        assertThat(response.getWardSearchList().getFirst().isMainGuardUser()).isTrue();
+    }
+
+    @Test
+    void changesMainGuardianForCurrentWard() {
+        MedicalUserPrincipal principal = new MedicalUserPrincipal("ward", UserType.WARD);
+        CheckMainGuardRequest request = new CheckMainGuardRequest();
+        request.setChangeGuardUserId("new-guard");
+
+        WardUser ward = ward();
+        GuardUser currentGuard = guard();
+        GuardUser newGuard = new GuardUser(
+            "new-guard", "새 보호자", "new@test.com", "pw", UserType.GUARDIAN);
+        Care currentMainCare = new Care(ward, currentGuard);
+        Care newMainCare = new Care(ward, newGuard);
+        currentMainCare.approve();
+        currentMainCare.changeMainGuard();
+        newMainCare.approve();
+        ReflectionTestUtils.setField(currentMainCare, "id", 1L);
+        ReflectionTestUtils.setField(newMainCare, "id", 2L);
+
+        when(wardRepository.findById("ward")).thenReturn(Optional.of(ward));
+        when(guardRepository.findById("new-guard")).thenReturn(Optional.of(newGuard));
+        when(careRepository.findMainGuard(ward)).thenReturn(Optional.of(currentMainCare));
+        when(careRepository.findChangeMainGuard(ward, newGuard)).thenReturn(Optional.of(newMainCare));
+
+        var response = service.checkMainGuard(principal, request);
+
+        assertThat(currentMainCare.getMainGuardUser()).isFalse();
+        assertThat(newMainCare.getMainGuardUser()).isTrue();
+        assertThat(response.getDeleteMainCare()).isEqualTo(1L);
+        assertThat(response.getChangeMainCare()).isEqualTo(2L);
     }
 
     private GuardUser guard() {

@@ -13,5 +13,6 @@ public class WardSearchDto {
     private String wardUserId;
     private String wardUserName;
     private UserType userType;
+    private boolean mainGuardUser;
 
 }
