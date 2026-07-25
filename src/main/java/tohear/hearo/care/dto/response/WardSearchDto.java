@@ -10,6 +10,7 @@ import tohear.hearo.user.auth.domain.UserType;
 @AllArgsConstructor
 public class WardSearchDto {
 
+    private long careId;
     private String wardUserId;
     private String wardUserName;
     private UserType userType;

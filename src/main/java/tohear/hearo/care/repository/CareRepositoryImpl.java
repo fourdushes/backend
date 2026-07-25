@@ -31,6 +31,7 @@ public class CareRepositoryImpl implements CareRepositoryCustom {
     public List<GuardSearchDto> findGuardUser(WardUser wardUser) {
         return queryFactory
                 .select(Projections.constructor(GuardSearchDto.class,
+                        QCare.care.id,
                         QGuardUser.guardUser.id,
                         QGuardUser.guardUser.name,
                         QGuardUser.guardUser.userType,
@@ -47,6 +48,7 @@ public class CareRepositoryImpl implements CareRepositoryCustom {
     public List<WardSearchDto> findWardUser(GuardUser guardUser) {
         return queryFactory
                 .select(Projections.constructor(WardSearchDto.class,
+                        QCare.care.id,
                         QWardUser.wardUser.id,
                         QWardUser.wardUser.name,
                         QWardUser.wardUser.userType,

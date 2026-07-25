@@ -29,7 +29,7 @@ HearO는 피보호자, 보호자, 의료기관을 연결하고 **대면 진료 �
 | 사용자 관리 | 피보호자, 보호자, 의료기관 유형별 회원가입·로그인·아이디 찾기·비밀번호 변경 |
 | 이메일 인증 | Gmail SMTP로 6자리 인증번호 발송, Redis TTL 기반 인증번호 검증 |
 | JWT 인증 | Access Token·Refresh Token 발급, Bearer Token 검증, 토큰 재발급 |
-| 보호 관계 | 사용자 검색, 연결 신청, 신청 목록 조회, 승인·거절 |
+| 보호 관계 | 사용자 검색, 연결 신청, 신청 목록 조회, 승인·거절, 메인 보호자 관리, 보호 관계 삭제 |
 | 진료 요청 | 피보호자의 의료기관 검색·진료 요청, 의료기관의 요청 조회·수락·거절 |
 | 대면 진료 기록 | 진료 기록 공간 생성, 텍스트 기록 조회·저장, 진료 완료 처리 |
 | 음성 기록 | 진료 녹음 파일 업로드, CLOVA Speech 연동 코드 기반 음성 인식 및 녹음 기록 저장 |
@@ -67,7 +67,7 @@ Spring Boot REST API :8081
 | 도메인 | 역할 | 주요 구성 |
 |---|---|---|
 | `user` | 사용자 및 인증 관리 | 피보호자, 보호자, 의료기관, 로그인, 메일 인증, 토큰 재발급 |
-| `care` | 보호 관계 관리 | 연결 신청, 승인·거절, 연결 대상 검색 |
+| `care` | 보호 관계 관리 | 연결 신청, 승인·거절, 연결 대상 검색, 메인 보호자 관리 |
 | `medicaltreatment` | 대면 진료 기록 진행 | 의료기관 검색, 진료 요청, 진료 기록 공간, 메시지, 녹음 |
 | `archive` | 완료된 진료 기록 관리 | 진료 내용 저장, 사용자별 목록 및 상세 조회 |
 | `global` | 공통 기반 기능 | JWT, 공통 응답, 예외 처리, 애플리케이션 설정 |
@@ -243,8 +243,12 @@ curl -i http://localhost:8081
 | `POST` | `/api/care/user/change-care-reject` | 필요 | `WARD` | 연결 신청 거절 |
 | `GET` | `/api/care/user/wards` | 필요 | `WARD` | 연결된 보호자 조회 |
 | `GET` | `/api/care/user/Guards` | 필요 | `GUARDIAN` | 연결된 피보호자 조회 |
+| `POST` | `/api/care/check-main-guard` | 필요 | `WARD` | 승인된 보호자 중 메인 보호자 변경 |
+| `POST` | `/api/care/delete-care` | 필요 | `WARD`, `GUARDIAN` | 본인이 당사자인 보호 관계 삭제 |
 
-> 마지막 두 경로는 현재 코드의 대소문자와 이름을 그대로 표기했습니다.
+> `/api/care/user/wards`와 `/api/care/user/Guards`는 현재 코드의 대소문자와 이름을 그대로 표기했습니다.
+
+연결 요청을 처음 승인할 때 아직 메인 보호자가 없으면 해당 보호자가 자동으로 메인 보호자로 지정됩니다. 연결된 보호자·피보호자 목록 응답에는 `careId`, `mainGuardUser`가 포함됩니다. 피보호자와 보호자는 목록에서 받은 `careId`를 이용해 본인이 당사자인 보호 관계를 삭제할 수 있습니다.
 
 ### 9.3 피보호자 대면 진료
 
@@ -299,6 +303,8 @@ curl -i http://localhost:8081
 | 토큰 재발급 | `refreshToken` | 로그인 시 발급된 Refresh Token |
 | 보호 관계 신청 | `wardUserId` | 연결할 피보호자 ID |
 | 보호 관계 승인·거절 | `careId` | 상태를 변경할 연결 ID |
+| 메인 보호자 변경 | `changeGuardUserId` | 새 메인 보호자로 지정할 승인된 보호자 ID |
+| 보호 관계 삭제 | `deleteCareId` | 삭제할 보호 관계의 Care ID |
 | 진료 요청 | `institutionUserId` | 진료를 요청할 의료기관 ID |
 | 텍스트 기록 | `content` | 대면 진료 중 저장할 텍스트 |
 | 녹음 완료 | `file` | `multipart/form-data` 오디오 파일 |

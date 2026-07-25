@@ -23,6 +23,7 @@ import tohear.hearo.care.domain.Care;
 import tohear.hearo.care.domain.CareState;
 import tohear.hearo.care.dto.request.ChangeCareStateRequest;
 import tohear.hearo.care.dto.request.CheckMainGuardRequest;
+import tohear.hearo.care.dto.request.DeleteCardRequest;
 import tohear.hearo.care.dto.request.FindWardToCareRequest;
 import tohear.hearo.care.dto.request.SaveCareRequest;
 import tohear.hearo.care.dto.response.WardSearchDto;
@@ -154,11 +155,12 @@ class CareServiceTest {
         MedicalUserPrincipal principal = new MedicalUserPrincipal("guard", UserType.GUARDIAN);
         when(guardRepository.findById("guard")).thenReturn(Optional.of(guard()));
         when(careRepository.findWardUser(any(GuardUser.class)))
-            .thenReturn(List.of(new WardSearchDto("ward", "피보호자", UserType.WARD, true)));
+            .thenReturn(List.of(new WardSearchDto(1L, "ward", "피보호자", UserType.WARD, true)));
 
         var response = service.searchWardUsers(principal);
 
         assertThat(response.getTotalCount()).isOne();
+        assertThat(response.getWardSearchList().getFirst().getCareId()).isEqualTo(1L);
         assertThat(response.getWardSearchList().getFirst().getUserType()).isEqualTo(UserType.WARD);
         assertThat(response.getWardSearchList().getFirst().isMainGuardUser()).isTrue();
     }
@@ -192,6 +194,48 @@ class CareServiceTest {
         assertThat(newMainCare.getMainGuardUser()).isTrue();
         assertThat(response.getDeleteMainCare()).isEqualTo(1L);
         assertThat(response.getChangeMainCare()).isEqualTo(2L);
+    }
+
+    @Test
+    void wardCanDeleteOwnCareRelationship() {
+        MedicalUserPrincipal principal = new MedicalUserPrincipal("ward", UserType.WARD);
+        DeleteCardRequest request = new DeleteCardRequest();
+        request.setDeleteCareId(3L);
+        Care care = new Care(ward(), guard());
+        ReflectionTestUtils.setField(care, "id", 3L);
+        when(careRepository.findById(3L)).thenReturn(Optional.of(care));
+
+        service.deleteCareUser(principal, request);
+
+        verify(careRepository).deleteById(3L);
+    }
+
+    @Test
+    void guardianCanDeleteOwnCareRelationship() {
+        MedicalUserPrincipal principal = new MedicalUserPrincipal("guard", UserType.GUARDIAN);
+        DeleteCardRequest request = new DeleteCardRequest();
+        request.setDeleteCareId(4L);
+        Care care = new Care(ward(), guard());
+        ReflectionTestUtils.setField(care, "id", 4L);
+        when(careRepository.findById(4L)).thenReturn(Optional.of(care));
+
+        service.deleteCareUser(principal, request);
+
+        verify(careRepository).deleteById(4L);
+    }
+
+    @Test
+    void userCannotDeleteAnotherUsersCareRelationship() {
+        MedicalUserPrincipal principal = new MedicalUserPrincipal("other-ward", UserType.WARD);
+        DeleteCardRequest request = new DeleteCardRequest();
+        request.setDeleteCareId(5L);
+        Care care = new Care(ward(), guard());
+        ReflectionTestUtils.setField(care, "id", 5L);
+        when(careRepository.findById(5L)).thenReturn(Optional.of(care));
+
+        assertThatThrownBy(() -> service.deleteCareUser(principal, request))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessage("삭제 권한이 없는 보호 관계입니다.");
     }
 
     private GuardUser guard() {
