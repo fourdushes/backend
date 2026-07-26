@@ -23,6 +23,8 @@ public class InstitutionsUser {
     @Enumerated(EnumType.STRING)
     private UserType userType; // 사용자 유형 (기관 사용자)
 
+    private Long institutionsId; // 기관 아이디
+
     public InstitutionsUser() {
     }
 
@@ -32,9 +34,14 @@ public class InstitutionsUser {
         this.email = email;
         this.password = password;
         this.userType = userType;
+        this.institutionsId = 0L;
     }
 
     public void changePassword(String newPassword) {
         this.password = newPassword;
+    }
+
+    public void changeName(String newName) {
+        this.name = newName;
     }
 }
