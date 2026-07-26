@@ -1,5 +1,6 @@
 package tohear.hearo.user.auth.mail;
 
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -18,14 +19,14 @@ public class MailController {
     private final MailService mailService;
 
     @PostMapping("/send")
-    public Result sendMail(@RequestBody EmailRequestDto request) {
+    public Result sendMail(@Valid @RequestBody EmailRequestDto request) {
         mailService.sendMail(request.getEmail());
 
         return new Result<>("200", "인증번호가 발송되었습니다.", null);
     }
 
     @PostMapping("/check")
-    public Result checkMail(@RequestBody EmailCheckNumberDto request) {
+    public Result checkMail(@Valid @RequestBody EmailCheckNumberDto request) {
         boolean isCorrect = mailService.checkCode(request.getEmail(), request.getCheckNumber());
         if (isCorrect) {
             return new Result<>("200", "인증번호가 일치합니다.", null);

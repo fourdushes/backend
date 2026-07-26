@@ -2,6 +2,7 @@ package tohear.hearo.medicaltreatment.controller;
 
 import java.util.List;
 
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -97,7 +98,7 @@ public class WardMedicalTreatmentController {
     public Result<ChatMessageResponse> sendMessage(
             @CurrentMedicalUser MedicalUserPrincipal principal,
             @PathVariable Long chatRoomId,
-            @RequestBody SendTextMessageRequest request) {
+            @Valid @RequestBody SendTextMessageRequest request) {
         return new Result<>("200", "채팅 메시지를 전송했습니다.",
                 medicalTreatmentService.sendWardMessage(principal, chatRoomId, request.getContent()));
     }
