@@ -14,7 +14,7 @@
 
 [작업 범위]
 1. 먼저 현재 Notion의 `API 명세서` 데이터베이스와 `엔드포인트 상세 (작성 템플릿)` 구조를 읽고 속성명, 열 순서, 상세 페이지 구성을 확인한다.
-2. HEARO_API_SPEC.md의 API 인덱스 37개를 Notion API 명세서와 `HTTP Method + API Path` 기준으로 비교한다.
+2. HEARO_API_SPEC.md의 API 인덱스 41개를 Notion API 명세서와 `HTTP Method + API Path` 기준으로 비교한다.
 3. 동일한 API가 있으면 중복 생성하지 말고 기존 행과 상세 페이지를 수정한다.
 4. API가 없으면 기존 템플릿을 복제하여 새 행과 상세 페이지를 생성한다.
 5. Notion에만 있고 현재 명세 파일에 없는 API는 삭제하지 말고 `코드에서 확인되지 않음`으로 표시한 뒤 최종 보고에 포함한다.
@@ -55,17 +55,17 @@ index | 기능 | HTTP Method | API Path | 담당자 | 개발 현황 | 토큰 | �
 3. `POST /api/mail/check`의 인증번호 불일치는 실제 HTTP 200이며 응답 Body의 status만 `"400"`인 현재 코드 동작을 정확히 적는다.
 4. `POST /api/users/change-password`를 PATCH로 바꾸지 않는다.
 5. `/api/care/user/Guards`의 대문자 `G`를 임의로 변경하지 않는다.
-6. `/api/users/mypage`와 `/api/hearO`는 현재 코드에 존재하지 않으므로 신규 API로 작성하지 않는다.
+6. 코드에 존재하지 않는 `/api/users/mypage`와 `/api/hearO`를 신규 API로 작성하지 않는다. 현재 마이페이지 경로는 `/api/mypage/**`다.
 7. 비밀번호, JWT 원문, SMTP 정보, API Key, 실제 이메일, 실제 사용자 데이터 및 환경변수 값을 Notion에 기록하지 않는다.
 8. HEARO_API_SPEC.md와 프로젝트 소스코드는 수정하지 않는다. 허용된 변경 대상은 Notion API 명세서뿐이다.
 9. 기존 Notion 템플릿의 속성명과 상세 페이지 구조를 불필요하게 변경하지 않는다.
-10. 일부 API만 처리하고 완료했다고 보고하지 말고 37개 전체를 대조한 뒤 정합성을 검사한다.
+10. 일부 API만 처리하고 완료했다고 보고하지 말고 41개 전체를 대조한 뒤 정합성을 검사한다.
 
 [완료 조건]
-- Notion 인덱스에 현재 API 37개가 누락 없이 반영되어야 한다.
+- Notion 인덱스에 현재 API 41개가 누락 없이 반영되어야 한다.
 - `HTTP Method + API Path`가 중복되면 안 된다.
 - 각 인덱스 행과 상세 페이지가 연결되어야 한다.
-- 토큰 Yes 28개, No 9개가 유지되어야 한다.
+- 토큰 Yes 32개, No 9개가 유지되어야 한다.
 - 프론트 담당자와 프론트 개발 현황 열이 위 제한에 맞게 작성되어야 한다.
 - 최종 보고에 처리 결과와 확인 필요 항목을 제시해야 한다.
 ```
@@ -75,7 +75,7 @@ index | 기능 | HTTP Method | API Path | 담당자 | 개발 현황 | 토큰 | �
 ```markdown
 ## 작업 결과
 - 기준 문서: HEARO_API_SPEC.md
-- 전체 API: 37개
+- 전체 API: 41개
 - 신규 작성: N개
 - 기존 항목 수정: N개
 - 변경 없음: N개
@@ -83,7 +83,7 @@ index | 기능 | HTTP Method | API Path | 담당자 | 개발 현황 | 토큰 | �
 - 확인 필요: N개
 
 ## 인증 분류
-- 토큰 Yes: 28개
+- 토큰 Yes: 32개
 - 토큰 No: 9개
 
 ## 프론트 설명
@@ -115,6 +115,10 @@ index | 기능 | HTTP Method | API Path | 담당자 | 개발 현황 | 토큰 | �
 | [토큰 재발급] | Refresh Token 검증 및 JWT 재발급 | POST | `/api/users/token/reissue` | 양준형 | 완료 | No |
 | [메일 인증번호 발송] | 이메일 인증번호 발송 및 Redis 저장 | POST | `/api/mail/send` | 양준형 | 완료 | No |
 | [메일 인증번호 확인] | 이메일 인증번호 검증 | POST | `/api/mail/check` | 양준형 | 완료 | No |
+| [피보호자 마이페이지] | 피보호자 본인 정보 조회 | GET | `/api/mypage/ward-user` | 양준형 | 완료 | Yes |
+| [보호자 마이페이지] | 보호자 본인 정보 조회 | GET | `/api/mypage/guard-user` | 양준형 | 완료 | Yes |
+| [기관 마이페이지] | 기관 본인 정보 조회 | GET | `/api/mypage/institutions-user` | 양준형 | 완료 | Yes |
+| [이름 변경] | 로그인 사용자 유형에 맞는 테이블의 이름 변경 | PATCH | `/api/mypage/change-name` | 양준형 | 완료 | Yes |
 | [피보호자 검색] | 보호자가 연결할 피보호자 검색 | GET | `/api/care/user/search-ward-user` | 양준형 | 완료 | Yes |
 | [돌봄 연결 신청] | 보호자가 피보호자에게 연결 신청 | POST | `/api/care/user/save-care` | 양준형 | 완료 | Yes |
 | [피보호자 연결 목록] | 피보호자 기준 연결 목록 조회 | GET | `/api/care/user/ward/check-care-list` | 양준형 | 완료 | Yes |
@@ -240,7 +244,7 @@ Authorization: Bearer {accessToken}
 
 | 구분 | 필드 | 타입 | 필수 | 설명 | 예시 |
 |---|---|---|---|---|---|
-| Body | `id` | string | Yes | 사용자 ID | `ward-demo` |
+| Body | `id` | string | Yes | 5자 이상의 사용자 ID | `ward-demo` |
 | Body | `name` | string | Yes | 이름 | `홍길동` |
 | Body | `email` | string | Yes | 이메일 | `demo@example.com` |
 | Body | `password` | string | Yes | 비밀번호 | `{password}` |
@@ -634,7 +638,7 @@ HTTP 400: `보호자만 피보호자를 조회할 수 있습니다.`, `보호자
 
 #### Request
 
-Body `changeGuardUserId`(string, 필수). DTO의 `wardUserId`는 현재 서비스에서 사용하지 않으며 인증 토큰의 피보호자 ID를 기준으로 처리한다.
+Body `changeGuardUserId`(string, 필수). 변경을 요청하는 피보호자는 인증 토큰의 사용자 ID를 기준으로 처리한다.
 
 ```json
 {
@@ -1026,6 +1030,82 @@ HTTP 400: `보호자만 진료 기록 목록을 조회할 수 있습니다.`, `�
 {
   "status": "UP"
 }
+
+### 38) [피보호자 마이페이지] `/api/mypage/ward-user`
+
+| 항목 | 값 |
+|---|---|
+| Method | GET |
+| Path | `/api/mypage/ward-user` |
+| Auth(인증) | Yes (WARD) |
+| Description | JWT의 사용자 ID로 피보호자 본인의 마이페이지 정보를 조회한다. |
+
+#### Response (200)
+
+`data { userId, username, email, userType }`.
+
+#### Error Codes
+
+HTTP 400: `피보호자만 볼 수 있는 기능입니다.`, `피보호자를 찾을 수 없습니다.` 및 공통 인증 오류.
+
+### 39) [보호자 마이페이지] `/api/mypage/guard-user`
+
+| 항목 | 값 |
+|---|---|
+| Method | GET |
+| Path | `/api/mypage/guard-user` |
+| Auth(인증) | Yes (GUARDIAN) |
+| Description | JWT의 사용자 ID로 보호자 본인의 마이페이지 정보를 조회한다. |
+
+#### Response (200)
+
+`data { userId, username, email, userType }`.
+
+#### Error Codes
+
+HTTP 400: `보호자만 볼 수 있는 기능입니다.`, `보호자를 찾을 수 없습니다.` 및 공통 인증 오류.
+
+### 40) [기관 마이페이지] `/api/mypage/institutions-user`
+
+| 항목 | 값 |
+|---|---|
+| Method | GET |
+| Path | `/api/mypage/institutions-user` |
+| Auth(인증) | Yes (INSTITUTIONS) |
+| Description | JWT의 사용자 ID로 기관 본인의 마이페이지 정보를 조회한다. |
+
+#### Response (200)
+
+`data { userId, username, email, userType, institytionsId }`. `institytionsId`는 현재 코드의 JSON 필드명을 그대로 표기했다.
+
+#### Error Codes
+
+HTTP 400: `기관만 볼 수 있는 기능입니다.`, `기관 사용자를 찾을 수 없습니다.` 및 공통 인증 오류.
+
+### 41) [이름 변경] `/api/mypage/change-name`
+
+| 항목 | 값 |
+|---|---|
+| Method | PATCH |
+| Path | `/api/mypage/change-name` |
+| Auth(인증) | Yes (WARD, GUARDIAN, INSTITUTIONS) |
+| Description | JWT 사용자 유형에 맞는 사용자 테이블의 이름을 변경한다. |
+
+#### Request
+
+```json
+{
+  "newName": "변경할 이름"
+}
+```
+
+#### Response (200)
+
+`data { newName }`, 메시지는 `이름이 변경되었습니다.`이다.
+
+#### Error Codes
+
+HTTP 400: `이름을 변경할 대상을 찾을 수 없습니다.` 및 사용자 유형별 조회 오류, `@NotBlank` 검증 오류, 공통 인증 오류.
 ```
 
 ## 4. 코드 정합성 및 확인 필요 사항
@@ -1033,17 +1113,17 @@ HTTP 400: `보호자만 진료 기록 목록을 조회할 수 있습니다.`, `�
 - 스캔한 Controller: 9개
 - API가 있는 Controller: 8개 (`Archive`, `Care`, `Health`, `InstitutionMedicalTreatment`, `WardMedicalTreatment`, `TokenReissue`, `User`, `Mail`)
 - 빈 Controller: 1개 (`MyPageController`) — 매핑된 API 없음
-- 발견한 API: 37개
-- 토큰 Yes: 28개
+- 발견한 API: 41개
+- 토큰 Yes: 32개
 - 토큰 No: 9개
 - 동일한 `HTTP Method + API Path` 중복: 없음
 - `POST /api/mail/check` 실패는 HTTP 400이 아니라 HTTP 200 + Body status `"400"`이다.
 - `POST /api/users/change-password`는 이름과 달리 PATCH가 아니라 실제 코드상 POST다.
 - `/api/care/user/Guards`는 실제 코드에 대문자 `G`로 선언되어 있다.
-- DTO 필드에는 Jakarta Validation 애노테이션이 없어 필수 여부가 런타임에서 명시적으로 검증되지 않는다. 본 문서의 `필수`는 서비스가 기능 수행에 요구하는 값 기준이다.
+- 사용자 인증·메일·토큰·이름 변경·채팅 텍스트 요청은 Jakarta Bean Validation으로 필수값과 이메일 형식을 검사한다. 회원가입 아이디는 5자 이상이어야 한다. Care·진료 요청 등 아직 검증 애노테이션을 적용하지 않은 DTO의 `필수` 표기는 서비스가 기능 수행에 요구하는 값 기준이다.
 - JWT 재발급의 만료·서명 오류, SMTP/Redis 장애, 외부 음성 인식 및 IOException은 전용 전역 예외 매핑이 없어 실제 HTTP 오류 형식 확인이 필요하다.
 - `ArchiveService`의 보호자 권한 판정은 주석상 승인 관계를 의도하지만 조회 결과에서 `CareState.APPROVED`를 명시적으로 검사하지 않는다.
-- `MyPageController`는 비어 있으므로 `/api/users/mypage`와 `/api/hearO`는 현재 코드에 존재하지 않는다.
+- 마이페이지 API는 `/api/mypage/**`에 4개가 구현되어 있으며 `/api/users/mypage`와 `/api/hearO`는 현재 코드에 존재하지 않는다.
 
 ## 5. 근거 코드
 

@@ -1,6 +1,8 @@
 package tohear.hearo.global.exception;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -9,6 +11,19 @@ import tohear.hearo.global.response.Result;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public Result<?> handleMethodArgumentNotValidException(MethodArgumentNotValidException e) {
+        String message = e.getBindingResult()
+            .getFieldErrors()
+            .stream()
+            .findFirst()
+            .map(FieldError::getDefaultMessage)
+            .orElse("요청값이 올바르지 않습니다.");
+
+        return new Result<>("400", message, null);
+    }
 
     // 프로젝트 어디서든 IllegalArgumentException이 터지면 이 메서드가 가로챕니다.
     @ResponseStatus(HttpStatus.BAD_REQUEST)

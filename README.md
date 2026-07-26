@@ -29,12 +29,14 @@ HearO는 피보호자, 보호자, 의료기관을 연결하고 **대면 진료 �
 | 사용자 관리 | 피보호자, 보호자, 의료기관 유형별 회원가입·로그인·아이디 찾기·비밀번호 변경 |
 | 이메일 인증 | Gmail SMTP로 6자리 인증번호 발송, Redis TTL 기반 인증번호 검증 |
 | JWT 인증 | Access Token·Refresh Token 발급, Bearer Token 검증, 토큰 재발급 |
+| 마이페이지 | 사용자 유형별 본인 정보 조회 및 공통 이름 변경 |
 | 보호 관계 | 사용자 검색, 연결 신청, 신청 목록 조회, 승인·거절, 메인 보호자 관리, 보호 관계 삭제 |
 | 진료 요청 | 피보호자의 의료기관 검색·진료 요청, 의료기관의 요청 조회·수락·거절 |
 | 대면 진료 기록 | 진료 기록 공간 생성, 텍스트 기록 조회·저장, 진료 완료 처리 |
 | 음성 기록 | 진료 녹음 파일 업로드, CLOVA Speech 연동 코드 기반 음성 인식 및 녹음 기록 저장 |
 | 진료 아카이브 | 진료 종료 시 아카이브 저장, 피보호자·보호자별 기록 목록 및 상세 조회 |
 | 공통 응답·예외 | `Result` 응답 형식과 전역 예외 처리 적용 |
+| 요청값 검증 | 사용자·메일·토큰·이름 변경·채팅 텍스트 요청의 필수값과 이메일 형식 검증 |
 
 ---
 
@@ -231,7 +233,18 @@ curl -i http://localhost:8081
 | `POST` | `/api/users/change-password` | 불필요 | 비밀번호 변경 |
 | `POST` | `/api/users/token/reissue` | 불필요 | Refresh Token으로 토큰 재발급 |
 
-### 9.2 보호 관계
+### 9.2 마이페이지
+
+| Method | Endpoint | 인증 | 사용자 유형 | 설명 |
+|---|---|---|---|---|
+| `GET` | `/api/mypage/ward-user` | 필요 | `WARD` | 피보호자 본인 정보 조회 |
+| `GET` | `/api/mypage/guard-user` | 필요 | `GUARDIAN` | 보호자 본인 정보 조회 |
+| `GET` | `/api/mypage/institutions-user` | 필요 | `INSTITUTIONS` | 기관 본인 정보 조회 |
+| `PATCH` | `/api/mypage/change-name` | 필요 | 전체 사용자 | 로그인 사용자 이름 변경 |
+
+마이페이지 조회는 JWT의 사용자 ID와 유형을 사용합니다. 이름 변경 요청은 사용자 ID나 유형을 받지 않고 `newName`만 받으며, 서비스가 로그인 사용자 유형에 맞는 테이블을 변경합니다.
+
+### 9.3 보호 관계
 
 | Method | Endpoint | 인증 | 사용자 유형 | 설명 |
 |---|---|---|---|---|
@@ -250,7 +263,7 @@ curl -i http://localhost:8081
 
 연결 요청을 처음 승인할 때 아직 메인 보호자가 없으면 해당 보호자가 자동으로 메인 보호자로 지정됩니다. 연결된 보호자·피보호자 목록 응답에는 `careId`, `mainGuardUser`가 포함됩니다. 피보호자와 보호자는 목록에서 받은 `careId`를 이용해 본인이 당사자인 보호 관계를 삭제할 수 있습니다.
 
-### 9.3 피보호자 대면 진료
+### 9.4 피보호자 대면 진료
 
 | Method | Endpoint | 사용자 유형 | 설명 |
 |---|---|---|---|
@@ -264,7 +277,7 @@ curl -i http://localhost:8081
 | `POST` | `/api/medical-treatment/ward/chat-rooms/{chatRoomId}/messages` | `WARD` | 텍스트 기록 전송 |
 | `POST` | `/api/medical-treatment/ward/chat-rooms/{chatRoomId}/complete` | `WARD` | 대면 진료 완료 및 아카이브 생성 |
 
-### 9.4 의료기관 대면 진료
+### 9.5 의료기관 대면 진료
 
 | Method | Endpoint | 사용자 유형 | 설명 |
 |---|---|---|---|
@@ -277,7 +290,7 @@ curl -i http://localhost:8081
 
 모든 진료 API는 JWT 인증이 필요합니다. 녹음 완료 API의 Content-Type은 `multipart/form-data`입니다. 코드의 `ChatRoom`, `ChatMessage` 명칭은 네트워크 기반 비대면 채팅이 아니라 대면 진료 과정의 텍스트·음성 기록을 저장하는 내부 도메인 명칭으로 사용합니다.
 
-### 9.5 진료 아카이브
+### 9.6 진료 아카이브
 
 | Method | Endpoint | 사용자 유형 | 설명 |
 |---|---|---|---|
@@ -289,7 +302,7 @@ curl -i http://localhost:8081
 
 > 현재 아카이브 접근 검증은 연결 관계의 존재 여부를 확인합니다. 서비스 코드에서 `CareState.APPROVED` 상태를 별도로 검사하지 않는 현재 동작을 기준으로 문서화했습니다.
 
-### 9.6 주요 요청 데이터
+### 9.7 주요 요청 데이터
 
 | API | 요청 필드 | 설명 |
 |---|---|---|
@@ -301,6 +314,7 @@ curl -i http://localhost:8081
 | 비밀번호 변경 사전 인증 | `name`, `email` | 이메일 인증 상태와 사용자 확인 |
 | 비밀번호 변경 | `id`, `newPassword`, `checkNewPassword`, `userType`, `tempToken` | 새 비밀번호와 임시 토큰 |
 | 토큰 재발급 | `refreshToken` | 로그인 시 발급된 Refresh Token |
+| 이름 변경 | `newName` | 로그인 사용자의 새 이름 |
 | 보호 관계 신청 | `wardUserId` | 연결할 피보호자 ID |
 | 보호 관계 승인·거절 | `careId` | 상태를 변경할 연결 ID |
 | 메인 보호자 변경 | `changeGuardUserId` | 새 메인 보호자로 지정할 승인된 보호자 ID |
@@ -312,6 +326,8 @@ curl -i http://localhost:8081
 `userType`에는 코드에 정의된 `WARD`, `GUARDIAN`, `INSTITUTIONS` 중 하나를 사용합니다.
 
 > 회원가입 시 Redis의 이메일 인증 완료 상태를 확인하고 세 사용자 테이블 전체에서 이메일 중복을 검사합니다. 가입 성공 후 해당 이메일의 인증 완료 상태는 삭제됩니다.
+
+사용자 인증·메일·토큰·이름 변경·채팅 텍스트 요청에는 Jakarta Bean Validation을 적용합니다. 필수 문자열은 공백만 전달해도 거부하며, 회원가입 아이디는 5자 이상이어야 하고 이메일 입력값은 이메일 형식이어야 합니다. 검증 실패는 HTTP 400과 공통 `Result` 형식으로 반환됩니다.
 
 ---
 

@@ -37,4 +37,8 @@ public class WardUser {
     public void changePassword(String newPassword) {
         this.password = newPassword;
     }
+
+    public void changeName(String newName) {
+        this.name = newName;
+    }
 }

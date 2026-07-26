@@ -22,6 +22,7 @@ public class GuardUser {
     
     @Enumerated(EnumType.STRING)
     private UserType userType; // 사용자 유형 (보호자)
+    
 
     public GuardUser() {
     }
@@ -36,5 +37,9 @@ public class GuardUser {
 
     public void changePassword(String newPassword) {
         this.password = newPassword;
+    }
+
+    public void changeName(String newName) {
+        this.name = newName;
     }
 }
