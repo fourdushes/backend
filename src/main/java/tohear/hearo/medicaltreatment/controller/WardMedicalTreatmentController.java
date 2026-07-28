@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import lombok.RequiredArgsConstructor;
 import tohear.hearo.global.response.Result;
+import tohear.hearo.ai.dto.AiResponse;
 import tohear.hearo.user.auth.principal.CurrentMedicalUser;
 import tohear.hearo.user.auth.principal.MedicalUserPrincipal;
 import tohear.hearo.medicaltreatment.chat.dto.request.SendTextMessageRequest;
@@ -105,7 +106,7 @@ public class WardMedicalTreatmentController {
 
     // 피보호자가 진료를 종료하고 전체 채팅 내용을 Archive에 저장합니다.
     @PostMapping("/chat-rooms/{chatRoomId}/complete")
-    public Result<ChatRoomResponse> completeTreatment(
+    public Result<AiResponse> completeTreatment(
             @CurrentMedicalUser MedicalUserPrincipal principal,
             @PathVariable Long chatRoomId) {
         return new Result<>("200", "진료를 종료했습니다.",

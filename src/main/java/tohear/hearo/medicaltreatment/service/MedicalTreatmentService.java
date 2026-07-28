@@ -198,7 +198,7 @@ public class MedicalTreatmentService {
     }
 
     @Transactional
-    public ChatRoomResponse completeTreatment(MedicalUserPrincipal principal, Long chatRoomId) {
+    public AiResponse completeTreatment(MedicalUserPrincipal principal, Long chatRoomId) {
         requireType(principal, UserType.WARD);
         ChatRoom chatRoom = findChatRoomForUpdate(chatRoomId);
         if (!chatRoom.getWardUser().getId().equals(principal.getUserId())) {
@@ -220,13 +220,10 @@ public class MedicalTreatmentService {
                           chatRoom.getArchive().getId(),
                           allChatText));
 
-        chatRoom.getArchive().updateText(response.getSummary());
-
-
         chatRoom.getArchive().updateAllChatText(allChatText);
         chatRoom.getMedicalRequest().complete();
         chatRoom.complete();
-        return toChatRoomResponse(chatRoom);
+        return response;
     }
 
     private MedicalRequest findRequestForUpdate(Long requestId) {

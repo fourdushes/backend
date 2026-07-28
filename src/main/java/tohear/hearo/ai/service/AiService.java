@@ -23,11 +23,9 @@ public class AiService {
                 .uri("/api/final-report") // AI 팀이 준 엔드포인트
                 .body(request)
                 .retrieve()
-                .body(AiResponse.class); // 응답을 String으로 받거나 DTO로 매핑
+                .body(AiResponse.class);
 
-                if (response == null || response.getSummary() == null || response.getSummary().isBlank()) {
-                    throw new AiSummaryException("AI 요약 결과가 비어 있습니다.");
-                }
+            validateResponse(response);
 
             return response;
         } catch (AiSummaryException e) {
@@ -36,5 +34,20 @@ public class AiService {
             throw new AiSummaryException("AI 요약 서비스 연결에 실패했습니다.", e);
         }
         
+    }
+
+    private void validateResponse(AiResponse response) {
+        if (response == null
+                || isBlank(response.getMainSymptoms())
+                || isBlank(response.getDoctorOpinion())
+                || isBlank(response.getRemember())
+                || isBlank(response.getQuestionAnswer())
+                || isBlank(response.getDifficultWords())) {
+            throw new AiSummaryException("AI 요약 결과가 비어 있습니다.");
+        }
+    }
+
+    private boolean isBlank(String value) {
+        return value == null || value.isBlank();
     }
 }

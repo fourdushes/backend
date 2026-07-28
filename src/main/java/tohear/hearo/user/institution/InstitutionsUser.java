@@ -4,9 +4,13 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 
 import lombok.Getter;
+import tohear.hearo.institution.domain.Institution;
 import tohear.hearo.user.auth.domain.UserType;
 
 @Entity
@@ -23,18 +27,24 @@ public class InstitutionsUser {
     @Enumerated(EnumType.STRING)
     private UserType userType; // 사용자 유형 (기관 사용자)
 
-    private Long institutionsId; // 기관 아이디
+    @JoinColumn(name = "institution_id")
+    @ManyToOne(fetch = FetchType.LAZY)
+    private Institution institution; // 기관 아이디
+
+    @Enumerated(EnumType.STRING)
+    private InstitutionState institutionState; // 기관 승인 상태
 
     public InstitutionsUser() {
     }
 
-    public InstitutionsUser(String id, String name, String email, String password, UserType userType) {
+    public InstitutionsUser(String id, String name, String email, String password, UserType userType, Institution institution) {
         this.id = id;
         this.name = name;
         this.email = email;
         this.password = password;
         this.userType = userType;
-        this.institutionsId = 0L;
+        this.institution = institution;
+        this.institutionState = InstitutionState.PENDING;
     }
 
     public void changePassword(String newPassword) {

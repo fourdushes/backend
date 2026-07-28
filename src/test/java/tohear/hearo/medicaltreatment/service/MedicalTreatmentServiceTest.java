@@ -24,6 +24,7 @@ import tohear.hearo.ai.dto.AiResponse;
 import tohear.hearo.ai.service.AiService;
 import tohear.hearo.archive.domain.Archive;
 import tohear.hearo.archive.repository.ArchiveRepository;
+import tohear.hearo.institution.domain.Institution;
 import tohear.hearo.user.auth.principal.MedicalUserPrincipal;
 import tohear.hearo.medicaltreatment.chat.domain.ChatMessage;
 import tohear.hearo.medicaltreatment.chat.domain.ChatMessageType;
@@ -205,13 +206,21 @@ class MedicalTreatmentServiceTest {
         when(chatMessageRepository.findAllByChatRoomIdOrderByCreatedAtAscIdAsc(20L))
                 .thenReturn(List.of(first, second));
         when(aiService.getSummary(any(AiRequest.class)))
-                .thenReturn(new AiResponse("ward", 10L, "전체 대화", "목 통증 진료 요약"));
-
-        service.completeTreatment(wardPrincipal(), 20L);
+                .thenReturn(new AiResponse(
+                        "ward",
+                        10L,
+                        "전체 대화",
+                        "목 통증",
+                        "인후염이 의심됩니다.",
+                        "충분한 수분을 섭취하세요.",
+                        "고열이 나면 다시 방문하세요.",
+                        "인후염: 목구멍에 생긴 염증"));
+        AiResponse response = service.completeTreatment(wardPrincipal(), 20L);
 
         assertThat(room.getArchive().getAllChatText()).isEqualTo(
                 "기관: 어디가 불편해서 오셨나요?" + System.lineSeparator() + "나: 목이 아파요.");
-        assertThat(room.getArchive().getText()).isEqualTo("목 통증 진료 요약");
+        assertThat(response.getMainSymptoms()).isEqualTo("목 통증");
+        assertThat(response.getDoctorOpinion()).isEqualTo("인후염이 의심됩니다.");
         assertThat(room.getStatus()).isEqualTo(ChatRoomStatus.COMPLETED);
         assertThat(room.getMedicalRequest().getStatus()).isEqualTo(MedicalRequestStatus.COMPLETED);
     }
@@ -248,7 +257,9 @@ class MedicalTreatmentServiceTest {
     }
 
     private InstitutionsUser doctor() {
-        return new InstitutionsUser("doctor", "의사", "doctor@test.com", "pw", UserType.INSTITUTIONS);
+        return new InstitutionsUser(
+                "doctor", "의사", "doctor@test.com", "pw", UserType.INSTITUTIONS,
+                new Institution("서울병원", "seoul-hospital", "pw"));
     }
 
     private MedicalUserPrincipal wardPrincipal() {
