@@ -24,4 +24,5 @@ public interface CareRepositoryCustom {
     boolean existMainGuard(WardUser wardUser); // 메인 보호자가 설정되어 있는지 확인
     Optional<Care> findMainGuard(WardUser wardUser); // 현재 메인 보호자가 누구인지 확인
     Optional<Care> findChangeMainGuard(WardUser wardUser, GuardUser guardUser); // 변경될 메인 보호자 케어 아이디 찾기
+
 }

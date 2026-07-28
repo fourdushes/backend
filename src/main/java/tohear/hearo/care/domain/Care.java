@@ -3,6 +3,8 @@ package tohear.hearo.care.domain;
 import java.time.LocalDateTime;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -29,6 +31,8 @@ public class Care {
     @JoinColumn(name = "guard_user_id")
     @ManyToOne(fetch = FetchType.LAZY)
     private GuardUser guardUser; // 보호자
+
+    @Enumerated(EnumType.STRING)
     private CareState careState; // 피보호자 승인 상태
     private Boolean mainGuardUser; // 메인 보호자 인지
     private LocalDateTime createdAt; // 연결 요청 생성 시간

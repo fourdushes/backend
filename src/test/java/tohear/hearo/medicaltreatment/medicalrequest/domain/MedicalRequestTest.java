@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import org.junit.jupiter.api.Test;
 
+import tohear.hearo.institution.domain.Institution;
 import tohear.hearo.user.auth.domain.UserType;
 import tohear.hearo.user.institution.InstitutionsUser;
 import tohear.hearo.user.ward.WardUser;
@@ -39,6 +40,8 @@ class MedicalRequestTest {
     private MedicalRequest request() {
         return new MedicalRequest(
                 new WardUser("ward", "환자", "ward@test.com", "pw", UserType.WARD),
-                new InstitutionsUser("doctor", "의사", "doctor@test.com", "pw", UserType.INSTITUTIONS));
+                new InstitutionsUser(
+                        "doctor", "의사", "doctor@test.com", "pw", UserType.INSTITUTIONS,
+                        new Institution("서울병원", "seoul-hospital", "pw")));
     }
 }

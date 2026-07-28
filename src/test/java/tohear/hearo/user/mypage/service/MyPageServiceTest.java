@@ -11,6 +11,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import tohear.hearo.institution.domain.Institution;
+import tohear.hearo.institution.service.InstitutionService;
 import tohear.hearo.user.auth.domain.UserType;
 import tohear.hearo.user.auth.principal.MedicalUserPrincipal;
 import tohear.hearo.user.guardian.GuardUser;
@@ -27,6 +29,7 @@ class MyPageServiceTest {
     @Mock WardUserService wardUserService;
     @Mock GuardUserService guardUserService;
     @Mock InstitutionsUserService institutionsUserService;
+    @Mock InstitutionService institutionService;
 
     private MyPageService service;
 
@@ -35,7 +38,8 @@ class MyPageServiceTest {
         service = new MyPageService(
             wardUserService,
             guardUserService,
-            institutionsUserService
+            institutionsUserService,
+            institutionService
         );
     }
 
@@ -70,10 +74,12 @@ class MyPageServiceTest {
 
     @Test
     void institutionCanReadOwnMyPage() {
-        InstitutionsUser institution = new InstitutionsUser(
-            "institution", "기관", "institution@test.com", "pw", UserType.INSTITUTIONS);
-        ReflectionTestUtils.setField(institution, "institutionsId", 10L);
-        when(institutionsUserService.findById("institution")).thenReturn(institution);
+        Institution organization = new Institution("서울병원", "seoul-hospital", "pw");
+        ReflectionTestUtils.setField(organization, "id", 10L);
+        InstitutionsUser institutionUser = new InstitutionsUser(
+            "institution", "기관", "institution@test.com", "pw",
+            UserType.INSTITUTIONS, organization);
+        when(institutionsUserService.findById("institution")).thenReturn(institutionUser);
 
         var response = service.institutionsMyPage(
             new MedicalUserPrincipal("institution", UserType.INSTITUTIONS));
@@ -81,7 +87,7 @@ class MyPageServiceTest {
         assertThat(response.getUserId()).isEqualTo("institution");
         assertThat(response.getUsername()).isEqualTo("기관");
         assertThat(response.getUserType()).isEqualTo(UserType.INSTITUTIONS);
-        assertThat(response.getInstitytionsId()).isEqualTo(10L);
+        assertThat(response.getInstitytionsName()).isEqualTo("서울병원");
     }
 
     @Test
@@ -90,8 +96,10 @@ class MyPageServiceTest {
             "ward", "기존 이름", "ward@test.com", "pw", UserType.WARD);
         GuardUser guardian = new GuardUser(
             "guard", "기존 이름", "guard@test.com", "pw", UserType.GUARDIAN);
+        Institution organization = new Institution("서울병원", "seoul-hospital", "pw");
         InstitutionsUser institution = new InstitutionsUser(
-            "institution", "기존 이름", "institution@test.com", "pw", UserType.INSTITUTIONS);
+            "institution", "기존 이름", "institution@test.com", "pw",
+            UserType.INSTITUTIONS, organization);
         when(wardUserService.findById("ward")).thenReturn(ward);
         when(guardUserService.findById("guard")).thenReturn(guardian);
         when(institutionsUserService.findById("institution")).thenReturn(institution);

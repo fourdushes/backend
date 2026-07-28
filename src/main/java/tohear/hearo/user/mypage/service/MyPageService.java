@@ -4,6 +4,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
+import tohear.hearo.institution.service.InstitutionService;
 import tohear.hearo.user.auth.domain.UserType;
 import tohear.hearo.user.auth.principal.MedicalUserPrincipal;
 import tohear.hearo.user.guardian.GuardUser;
@@ -26,6 +27,7 @@ public class MyPageService {
     private final WardUserService wardUserService;
     private final GuardUserService guardUserService;
     private final InstitutionsUserService institutionsUserService;
+    private final InstitutionService institutionService;
 
     public WardMyPageResponse wardMyPage(MedicalUserPrincipal principal) {
 
@@ -72,7 +74,7 @@ public class MyPageService {
             institutionsUser.getName(),
             institutionsUser.getEmail(),
             institutionsUser.getUserType(),
-            institutionsUser.getInstitutionsId()
+            institutionsUser.getInstitution().getInstitutionName()
         );
     }
 
