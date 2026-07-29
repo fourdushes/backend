@@ -38,7 +38,7 @@ public class CareRepositoryImpl implements CareRepositoryCustom {
                         QCare.care.mainGuardUser
                 ))
                 .from(QCare.care)
-                .join(QCare.care.guardUser, QGuardUser.guardUser).fetchJoin()
+                .join(QCare.care.guardUser, QGuardUser.guardUser)
                 .where(QCare.care.wardUser.eq(wardUser).and(QCare.care.careState.eq(CareState.APPROVED)))
                 .fetch();
     }
@@ -55,7 +55,7 @@ public class CareRepositoryImpl implements CareRepositoryCustom {
                         QCare.care.mainGuardUser
                 ))
                 .from(QCare.care)
-                .join(QCare.care.wardUser, QWardUser.wardUser).fetchJoin()
+                .join(QCare.care.wardUser, QWardUser.wardUser)
                 .where(QCare.care.guardUser.eq(guardUser).and(QCare.care.careState.eq(CareState.APPROVED)))
                 .fetch();
     }

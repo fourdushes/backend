@@ -92,8 +92,12 @@ public class ArchiveService {
             findArchive.getTitle(),
             findArchive.getArchiveDate(),
             findArchive.getText(),
-            findArchive.getAllChatText()
-
+            findArchive.getAllChatText(),
+            findArchive.getMainSymptoms(),
+            findArchive.getDoctorOpinion(),
+            findArchive.getRemember(),
+            findArchive.getQuestionAnswer(),
+            findArchive.getDifficultWords()
         );
     }
 

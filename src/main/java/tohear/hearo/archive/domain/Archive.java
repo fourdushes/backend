@@ -30,6 +30,21 @@ public class Archive {
     @Column(columnDefinition = "TEXT")
     private String allChatText;
 
+    @Column(columnDefinition = "TEXT")
+    private String mainSymptoms;
+
+    @Column(columnDefinition = "TEXT")
+    private String doctorOpinion;
+
+    @Column(columnDefinition = "TEXT")
+    private String remember;
+
+    @Column(columnDefinition = "TEXT")
+    private String questionAnswer;
+
+    @Column(columnDefinition = "TEXT")
+    private String difficultWords;
+
     @JoinColumn(name = "ward_user_id")
     @ManyToOne(fetch = FetchType.LAZY)
     private WardUser wardUser;
@@ -53,6 +68,19 @@ public class Archive {
 
     public void updateAllChatText(String allChatText) {
         this.allChatText = allChatText;
+    }
+
+    public void updateSummary(
+            String mainSymptoms,
+            String doctorOpinion,
+            String remember,
+            String questionAnswer,
+            String difficultWords) {
+        this.mainSymptoms = mainSymptoms;
+        this.doctorOpinion = doctorOpinion;
+        this.remember = remember;
+        this.questionAnswer = questionAnswer;
+        this.difficultWords = difficultWords;
     }
 
 }

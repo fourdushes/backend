@@ -4,7 +4,7 @@
 
 HearO는 피보호자, 보호자, 의료기관을 연결하고 **대면 진료 현장의 대화와 진료 기록을 관리하는 백엔드 API**입니다.
 
-사용자 유형별 회원 관리와 JWT 인증을 제공하고, 보호자와 피보호자의 연결 신청·승인, 의료기관 검색과 대면 진료 요청, 진료 내용 기록, 음성 녹음 및 CLOVA Speech 기반 텍스트 변환, 진료 기록 아카이브 조회 흐름을 구현했습니다.
+사용자 유형별 회원 관리와 JWT 인증을 제공하고, 보호자와 피보호자의 연결 신청·승인, 의료기관 검색과 대면 진료 요청, 진료 내용 기록, 음성 녹음 및 CLOVA Speech 기반 텍스트 변환, AI 진료 요약과 진료 기록 아카이브 조회 흐름을 구현했습니다.
 
 본 저장소는 Java 21과 Spring Boot 기반의 단일 백엔드 애플리케이션이며, MySQL에 서비스 데이터를 저장하고 Redis에 이메일 인증 상태를 관리합니다.
 
@@ -16,9 +16,9 @@ HearO는 피보호자, 보호자, 의료기관을 연결하고 **대면 진료 �
 |---|---|---|---|
 | Local Application | 로컬 API 개발 및 기능 검증 | `gradlew`, `src/main/resources/application.properties` | `http://localhost:8081` |
 | Test | 도메인·서비스·JWT·메일 기능 검증 | `src/test/java` | Gradle 테스트 리포트 |
-| External Services | 데이터 저장, 인증 메일, 음성 인식 | MySQL, Redis, Gmail SMTP, CLOVA Speech | 각 서비스 설정에 따름 |
+| External Services | 데이터 저장, 인증 메일, 음성 인식, 진료 요약 | MySQL, Redis, Gmail SMTP, CLOVA Speech, AI Summary API | 각 서비스 설정에 따름 |
 
-> 기본 애플리케이션 실행에는 MySQL이 필요합니다. Redis는 로그인·토큰 재발급·이메일 인증·비밀번호 변경에, Gmail SMTP와 CLOVA Speech는 각각 인증 메일 발송과 녹음 변환 기능에 필요합니다.
+> 기본 애플리케이션 실행에는 MySQL이 필요합니다. Redis는 로그인·토큰 재발급·이메일 인증·비밀번호 변경에, Gmail SMTP와 CLOVA Speech는 각각 인증 메일 발송과 녹음 변환 기능에 필요합니다. 진료 종료 시에는 외부 AI Summary API가 필요합니다.
 
 ---
 
@@ -34,7 +34,9 @@ HearO는 피보호자, 보호자, 의료기관을 연결하고 **대면 진료 �
 | 진료 요청 | 피보호자의 의료기관 검색·진료 요청, 의료기관의 요청 조회·수락·거절 |
 | 대면 진료 기록 | 진료 기록 공간 생성, 텍스트 기록 조회·저장, 진료 완료 처리 |
 | 음성 기록 | 진료 녹음 파일 업로드, CLOVA Speech 연동 코드 기반 음성 인식 및 녹음 기록 저장 |
-| 진료 아카이브 | 진료 종료 시 아카이브 저장, 피보호자·보호자별 기록 목록 및 상세 조회 |
+| AI 진료 요약 | 진료 종료 시 전체 대화를 외부 AI 서비스로 전달하고 주요 증상·의사 소견·기억할 내용·질문 답변·어려운 용어 생성 |
+| 진료 아카이브 | 진료 시작 시 아카이브 생성, 종료 시 전체 대화와 AI 요약 저장, 피보호자·보호자별 기록 목록 및 상세 조회 |
+| 문의 | 인증 사용자의 문의 등록, 본인 문의 목록·상세 조회 |
 | 공통 응답·예외 | `Result` 응답 형식과 전역 예외 처리 적용 |
 | 요청값 검증 | 사용자·메일·토큰·이름 변경·채팅 텍스트 요청의 필수값과 이메일 형식 검증 |
 
@@ -49,7 +51,7 @@ Client
   v
 Spring Boot REST API :8081
   |
-  +--> User / Care / Medical Treatment / Archive
+  +--> User / Care / Medical Treatment / Archive / Inquiry
   |         |
   |         +--------------------------> MySQL :3306
   |
@@ -58,6 +60,8 @@ Spring Boot REST API :8081
   |         +--------------------------> Gmail SMTP :587
   |
   +--> Recording Upload --------------> CLOVA Speech API
+  |
+  +--> Treatment Completion ----------> AI Summary API
 ```
 
 인증이 필요한 API는 `Authorization: Bearer <ACCESS_TOKEN>` 헤더를 전달합니다. 커스텀 Argument Resolver가 토큰에서 사용자 ID와 유형을 읽어 각 서비스에 현재 사용자 정보를 제공합니다.
@@ -69,9 +73,11 @@ Spring Boot REST API :8081
 | 도메인 | 역할 | 주요 구성 |
 |---|---|---|
 | `user` | 사용자 및 인증 관리 | 피보호자, 보호자, 의료기관, 로그인, 메일 인증, 토큰 재발급 |
+| `ai` | 진료 대화 요약 | 외부 AI 요청, 응답 검증·정규화 |
 | `care` | 보호 관계 관리 | 연결 신청, 승인·거절, 연결 대상 검색, 메인 보호자 관리 |
 | `medicaltreatment` | 대면 진료 기록 진행 | 의료기관 검색, 진료 요청, 진료 기록 공간, 메시지, 녹음 |
-| `archive` | 완료된 진료 기록 관리 | 진료 내용 저장, 사용자별 목록 및 상세 조회 |
+| `archive` | 완료된 진료 기록 관리 | 전체 대화·AI 요약 저장, 사용자별 목록 및 상세 조회 |
+| `inquiry` | 사용자 문의 관리 | 문의 등록, 본인 문의 목록·상세 조회 |
 | `global` | 공통 기반 기능 | JWT, 공통 응답, 예외 처리, 애플리케이션 설정 |
 
 ### 4.1 사용자 유형
@@ -96,6 +102,7 @@ Spring Boot REST API :8081
 | Authentication | JWT (`jjwt` 0.11.5), Spring Security Crypto |
 | Mail | Spring Mail, Gmail SMTP |
 | Speech-to-Text | NAVER Cloud CLOVA Speech |
+| AI Summary | Spring `RestClient`, 외부 진료 요약 API |
 | Build / Test | Gradle Wrapper, JUnit Platform |
 | Utilities | Lombok, Gson, Apache HttpClient |
 
@@ -118,9 +125,11 @@ Spring Boot REST API :8081
 src
 ├── main
 │   ├── java/tohear/hearo
+│   │   ├── ai                   # 외부 AI 진료 요약
 │   │   ├── archive              # 진료 아카이브
 │   │   ├── care                 # 보호자-피보호자 연결
 │   │   ├── global               # JWT, 응답, 예외, 설정
+│   │   ├── inquiry              # 사용자 문의
 │   │   ├── medicaltreatment     # 진료 요청, 채팅, 녹음
 │   │   ├── user                 # 사용자, 인증, 메일
 │   │   └── HearoApplication.java
@@ -132,9 +141,11 @@ src
 | 경로 | 역할 |
 |---|---|
 | `src/main/java/tohear/hearo/user` | 사용자 유형별 엔티티·서비스와 인증 API |
+| `src/main/java/tohear/hearo/ai` | 외부 AI 요약 요청·응답 검증 |
 | `src/main/java/tohear/hearo/care` | 보호 관계 도메인·조회·상태 변경 API |
 | `src/main/java/tohear/hearo/medicaltreatment` | 진료 요청, 채팅, 녹음과 의료기관 검색 |
 | `src/main/java/tohear/hearo/archive` | 완료 진료 기록 저장 및 조회 |
+| `src/main/java/tohear/hearo/inquiry` | 사용자 문의 등록 및 본인 문의 조회 |
 | `src/main/java/tohear/hearo/global` | 공통 인증·응답·예외 처리 |
 | `src/test/java/tohear/hearo` | 주요 도메인과 서비스 테스트 |
 
@@ -151,6 +162,7 @@ src
 | Redis | 인증 기능 사용 | Refresh Token, 이메일 인증, 비밀번호 재설정 토큰 저장 |
 | Gmail 앱 비밀번호 | 인증 메일 발송 | Gmail SMTP 인증번호 발송 |
 | CLOVA Speech Key·Invoke URL | 녹음 변환 | 대면 진료 녹음 파일의 텍스트 변환 |
+| AI Summary API | 진료 종료 | 전체 진료 대화 요약 |
 
 ### 8.2 데이터베이스 생성
 
@@ -186,7 +198,7 @@ export SPRING_DATA_REDIS_PORT='6379'
 
 Spring Boot의 외부 설정 우선순위에 따라 위 환경변수가 `application.properties` 값을 덮어씁니다.
 
-> CLOVA Speech의 `SECRET`, `INVOKE_URL`은 현재 환경변수로 연결되어 있지 않고 `ClovaSpeechClient` 내부 값이 비어 있습니다. 따라서 연동 코드 자체는 구현되어 있지만, 해당 값을 별도로 연결하기 전에는 녹음 변환 API가 정상 동작하지 않습니다.
+> CLOVA Speech의 `SECRET`, `INVOKE_URL`은 현재 환경변수로 연결되어 있지 않고 `ClovaSpeechClient` 내부 값이 비어 있습니다. 따라서 연동 코드 자체는 구현되어 있지만, 해당 값을 별도로 연결하기 전에는 녹음 변환 API가 정상 동작하지 않습니다. AI Summary API의 기준 주소도 현재 `AiClientConfig`에 직접 설정되어 있습니다.
 
 ### 8.4 애플리케이션 실행
 
@@ -211,10 +223,10 @@ http://localhost:8081
 기본 상태 확인:
 
 ```bash
-curl -i http://localhost:8081
+curl -i http://localhost:8081/api/health
 ```
 
-루트 전용 API는 구현되어 있지 않으므로 HTTP `404`가 반환되더라도 서버 응답이 도착하면 애플리케이션이 실행 중인 것입니다.
+정상 상태에서는 `{"status":"UP"}` 응답을 반환합니다.
 
 ---
 
@@ -261,7 +273,7 @@ curl -i http://localhost:8081
 
 > `/api/care/user/wards`와 `/api/care/user/Guards`는 현재 코드의 대소문자와 이름을 그대로 표기했습니다.
 
-연결 요청을 처음 승인할 때 아직 메인 보호자가 없으면 해당 보호자가 자동으로 메인 보호자로 지정됩니다. 연결된 보호자·피보호자 목록 응답에는 `careId`, `mainGuardUser`가 포함됩니다. 피보호자와 보호자는 목록에서 받은 `careId`를 이용해 본인이 당사자인 보호 관계를 삭제할 수 있습니다.
+연결 요청을 처음 승인할 때 아직 메인 보호자가 없으면 해당 보호자가 자동으로 메인 보호자로 지정됩니다. 연결 신청 목록과 연결된 보호자·피보호자 목록 응답에는 `careId`가 포함되며, 연결된 사용자 목록에는 `mainGuardUser`도 포함됩니다. 피보호자와 보호자는 목록에서 받은 `careId`를 이용해 본인이 당사자인 보호 관계를 삭제할 수 있습니다.
 
 ### 9.4 피보호자 대면 진료
 
@@ -275,7 +287,9 @@ curl -i http://localhost:8081
 | `GET` | `/api/medical-treatment/ward/chat-rooms/{chatRoomId}` | `WARD` | 진료 기록 공간 조회 |
 | `GET` | `/api/medical-treatment/ward/chat-rooms/{chatRoomId}/messages` | `WARD` | 기록 메시지 목록 조회 |
 | `POST` | `/api/medical-treatment/ward/chat-rooms/{chatRoomId}/messages` | `WARD` | 텍스트 기록 전송 |
-| `POST` | `/api/medical-treatment/ward/chat-rooms/{chatRoomId}/complete` | `WARD` | 대면 진료 완료 및 아카이브 생성 |
+| `POST` | `/api/medical-treatment/ward/chat-rooms/{chatRoomId}/complete` | `WARD` | 대면 진료 완료, AI 요약 생성 및 아카이브 저장 |
+
+진료 종료 API는 시스템 메시지를 제외한 대화를 시간순으로 합쳐 AI Summary API에 전달합니다. 응답과 아카이브 상세에는 `mainSymptoms`, `doctorOpinion`, `remember`, `questionAnswer`, `difficultWords`가 포함됩니다. 일부 요약 필드만 비어 있으면 해당 값을 `"없음"`으로 저장하고, 전체 요약이 비어 있거나 외부 서비스 호출이 실패하면 HTTP `502`를 반환합니다.
 
 ### 9.5 의료기관 대면 진료
 
@@ -300,9 +314,27 @@ curl -i http://localhost:8081
 
 목록 API는 `page`, `size`, `sort` 페이지네이션 파라미터를 사용할 수 있습니다.
 
-> 현재 아카이브 접근 검증은 연결 관계의 존재 여부를 확인합니다. 서비스 코드에서 `CareState.APPROVED` 상태를 별도로 검사하지 않는 현재 동작을 기준으로 문서화했습니다.
+아카이브 상세 응답은 `archiveId`, `title`, `archiveDate`, `text`, `allChatText`와 AI 요약 필드 `mainSymptoms`, `doctorOpinion`, `remember`, `questionAnswer`, `difficultWords`를 반환합니다. 보호자는 해당 피보호자와 `APPROVED` 상태의 보호 관계가 있을 때만 목록과 상세를 조회할 수 있습니다.
 
-### 9.7 주요 요청 데이터
+### 9.7 문의
+
+| Method | Endpoint | 사용자 유형 | 설명 |
+|---|---|---|---|
+| `POST` | `/api/inquiries` | 인증 사용자 전체 | 문의 등록 |
+| `GET` | `/api/inquiries` | 인증 사용자 전체 | 본인 문의 목록 조회 |
+| `GET` | `/api/inquiries/{inquiryId}` | 인증 사용자 전체 | 본인 문의 상세 조회 |
+
+문의 등록은 `title`과 `content`를 받으며 제목은 100자, 내용은 5,000자 이하로 제한됩니다. 목록은 생성일시 내림차순으로 반환되고 `page`, `size` 페이지네이션 파라미터를 지원합니다.
+
+### 9.8 공개 기관 검색
+
+| Method | Endpoint | 인증 | 설명 |
+|---|---|---|---|
+| `GET` | `/api/institutions/search?keyword=` | 불필요 | 기관명 부분 일치 검색 |
+
+기본 페이지는 0, 크기는 10이며 응답은 Spring Data `Page<InstitutionSearchResponse>` 구조입니다.
+
+### 9.9 주요 요청 데이터
 
 | API | 요청 필드 | 설명 |
 |---|---|---|
@@ -322,6 +354,7 @@ curl -i http://localhost:8081
 | 진료 요청 | `institutionUserId` | 진료를 요청할 의료기관 ID |
 | 텍스트 기록 | `content` | 대면 진료 중 저장할 텍스트 |
 | 녹음 완료 | `file` | `multipart/form-data` 오디오 파일 |
+| 문의 등록 | `title`, `content` | 제목과 문의 내용 |
 
 `userType`에는 코드에 정의된 `WARD`, `GUARDIAN`, `INSTITUTIONS` 중 하나를 사용합니다.
 
@@ -351,7 +384,7 @@ Access Token 기본 유효기간은 2일, Refresh Token 기본 유효기간은 1
 }
 ```
 
-잘못된 요청과 인증 실패는 전역 예외 처리기를 통해 각각 HTTP `400`, `401` 응답으로 변환됩니다.
+잘못된 요청과 인증 실패는 전역 예외 처리기를 통해 각각 HTTP `400`, `401` 응답으로 변환됩니다. 음성 인식·파일 저장·AI 요약 외부 서비스 오류는 HTTP `502`로 변환됩니다.
 
 ---
 
@@ -472,6 +505,12 @@ curl -X POST http://localhost:8081/api/medical-treatment/institution/chat-rooms/
 - `ClovaSpeechClient`에 CLOVA Speech Secret Key와 Invoke URL이 설정되었는지 확인합니다.
 - 요청이 `multipart/form-data`이고 오디오 파일이 포함되었는지 확인합니다.
 
+### AI 요약 실패
+
+- `AiClientConfig`의 AI Summary API 기준 주소와 외부 서비스 상태를 확인합니다.
+- 전체 요약 필드가 비어 있는 응답은 실패로 처리됩니다.
+- 일부 필드만 비어 있으면 해당 필드는 `"없음"`으로 정규화됩니다.
+
 ---
 
 ## 14. 보안 및 환경변수 관리
@@ -487,6 +526,6 @@ curl -X POST http://localhost:8081/api/medical-treatment/institution/chat-rooms/
 
 ## 15. 프로젝트 의의
 
-HearO는 사용자 유형별 권한과 보호 관계를 중심으로 대면 진료 요청부터 현장 대화 기록, 음성 텍스트 변환, 완료된 진료 기록 조회까지 하나의 흐름으로 연결합니다.
+HearO는 사용자 유형별 권한과 보호 관계를 중심으로 대면 진료 요청부터 현장 대화 기록, 음성 텍스트 변환, AI 진료 요약, 완료된 진료 기록 조회까지 하나의 흐름으로 연결합니다.
 
-Strategy 형태의 사용자 서비스 분기, 커스텀 JWT 사용자 주입, QueryDSL 기반 조회, Redis TTL 이메일 인증, 외부 Speech-to-Text 연동을 통해 실제 서비스 백엔드에서 필요한 인증·영속성·외부 API 통합을 함께 다룹니다.
+Strategy 형태의 사용자 서비스 분기, 커스텀 JWT 사용자 주입, QueryDSL 기반 조회, Redis TTL 이메일 인증, 외부 Speech-to-Text·AI Summary 연동을 통해 실제 서비스 백엔드에서 필요한 인증·영속성·외부 API 통합을 함께 다룹니다.

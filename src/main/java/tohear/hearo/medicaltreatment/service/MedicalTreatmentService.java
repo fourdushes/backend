@@ -221,6 +221,12 @@ public class MedicalTreatmentService {
                           allChatText));
 
         chatRoom.getArchive().updateAllChatText(allChatText);
+        chatRoom.getArchive().updateSummary(
+            response.getMainSymptoms(),
+            response.getDoctorOpinion(),
+            response.getRemember(),
+            response.getQuestionAnswer(),
+            response.getDifficultWords());
         chatRoom.getMedicalRequest().complete();
         chatRoom.complete();
         return response;

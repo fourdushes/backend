@@ -151,6 +151,27 @@ class CareServiceTest {
     }
 
     @Test
+    void careListsIncludeCareId() {
+        WardUser ward = ward();
+        GuardUser guard = guard();
+        Care care = new Care(ward, guard);
+        ReflectionTestUtils.setField(care, "id", 42L);
+
+        when(wardRepository.findById("ward")).thenReturn(Optional.of(ward));
+        when(careRepository.findCareByWardUser(ward)).thenReturn(List.of(care));
+        when(guardRepository.findById("guard")).thenReturn(Optional.of(guard));
+        when(careRepository.findCareByGuardUser(guard)).thenReturn(List.of(care));
+
+        var wardResponse = service.checkCareListByWardUser(
+            new MedicalUserPrincipal("ward", UserType.WARD));
+        var guardResponse = service.checkCareListByGuardUser(
+            new MedicalUserPrincipal("guard", UserType.GUARDIAN));
+
+        assertThat(wardResponse.getCareList().getFirst().getCareId()).isEqualTo(42L);
+        assertThat(guardResponse.getCareList().getFirst().getCareId()).isEqualTo(42L);
+    }
+
+    @Test
     void searchesOnlyWardsReturnedByRepository() {
         MedicalUserPrincipal principal = new MedicalUserPrincipal("guard", UserType.GUARDIAN);
         when(guardRepository.findById("guard")).thenReturn(Optional.of(guard()));

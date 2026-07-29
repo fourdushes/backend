@@ -221,6 +221,11 @@ class MedicalTreatmentServiceTest {
                 "기관: 어디가 불편해서 오셨나요?" + System.lineSeparator() + "나: 목이 아파요.");
         assertThat(response.getMainSymptoms()).isEqualTo("목 통증");
         assertThat(response.getDoctorOpinion()).isEqualTo("인후염이 의심됩니다.");
+        assertThat(room.getArchive().getMainSymptoms()).isEqualTo("목 통증");
+        assertThat(room.getArchive().getDoctorOpinion()).isEqualTo("인후염이 의심됩니다.");
+        assertThat(room.getArchive().getRemember()).isEqualTo("충분한 수분을 섭취하세요.");
+        assertThat(room.getArchive().getQuestionAnswer()).isEqualTo("고열이 나면 다시 방문하세요.");
+        assertThat(room.getArchive().getDifficultWords()).isEqualTo("인후염: 목구멍에 생긴 염증");
         assertThat(room.getStatus()).isEqualTo(ChatRoomStatus.COMPLETED);
         assertThat(room.getMedicalRequest().getStatus()).isEqualTo(MedicalRequestStatus.COMPLETED);
     }
