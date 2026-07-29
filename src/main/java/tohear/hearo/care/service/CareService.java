@@ -112,7 +112,8 @@ public class CareService {
                 care.getGuardUser().getId(),
                 care.getCareState(),
                 care.getCreatedAt(),
-                care.getUpdatedAt()
+                care.getUpdatedAt(),
+                care.getId()
             );
             responseList.add(response);
         }
@@ -139,7 +140,8 @@ public class CareService {
                 care.getGuardUser().getId(),
                 care.getCareState(),
                 care.getCreatedAt(),
-                care.getUpdatedAt()
+                care.getUpdatedAt(),
+                care.getId()
             );
             responseList.add(response);
         }

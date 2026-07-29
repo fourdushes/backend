@@ -79,18 +79,18 @@ public class CareController {
         return new Result<>("200", "연결을 거절했습니다.", response);
     }
 
-    // 피보호자가 보호자를 검색하는 API
+    // 피보호자가 연결된 보호자를 조회하는 API
     @GetMapping("/api/care/user/wards")
-    public Result searchWardUser(@CurrentMedicalUser MedicalUserPrincipal principal) {
+    public Result searchGuardUsers(@CurrentMedicalUser MedicalUserPrincipal principal) {
         GuardSearchResponse response = careService.searchGuardUsers(principal);
-        return new Result<>("200", "피보호자 검색이 성공했습니다.", response);
+        return new Result<>("200", "보호자 조회에 성공했습니다.", response);
     }
 
-    // 피보호자가 보호자를 검색하는 API
+    // 보호자가 연결된 피보호자를 조회하는 API
     @GetMapping("/api/care/user/Guards")
-    public Result searchGuardUser(@CurrentMedicalUser MedicalUserPrincipal principal) {
+    public Result searchWardUsers(@CurrentMedicalUser MedicalUserPrincipal principal) {
         WardSearchResponse response = careService.searchWardUsers(principal);
-        return new Result<>("200", "보호자 검색이 성공했습니다.", response);
+        return new Result<>("200", "피보호자 조회에 성공했습니다.", response);
     }
 
     // 메인 보호자 설정 API
