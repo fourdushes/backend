@@ -25,7 +25,6 @@ import tohear.hearo.ai.service.AiService;
 import tohear.hearo.archive.domain.Archive;
 import tohear.hearo.archive.repository.ArchiveRepository;
 import tohear.hearo.institution.domain.Institution;
-import tohear.hearo.user.auth.principal.MedicalUserPrincipal;
 import tohear.hearo.medicaltreatment.chat.domain.ChatMessage;
 import tohear.hearo.medicaltreatment.chat.domain.ChatMessageType;
 import tohear.hearo.medicaltreatment.chat.domain.ChatRoom;
@@ -41,6 +40,7 @@ import tohear.hearo.medicaltreatment.record.domain.Record;
 import tohear.hearo.medicaltreatment.record.dto.CompletedRecord;
 import tohear.hearo.medicaltreatment.record.service.RecordService;
 import tohear.hearo.user.auth.domain.UserType;
+import tohear.hearo.user.auth.principal.MedicalUserPrincipal;
 import tohear.hearo.user.institution.InstitutionsUser;
 import tohear.hearo.user.ward.WardUser;
 import tohear.hearo.user.ward.WardUserRepository;
@@ -264,7 +264,7 @@ class MedicalTreatmentServiceTest {
     private InstitutionsUser doctor() {
         return new InstitutionsUser(
                 "doctor", "의사", "doctor@test.com", "pw", UserType.INSTITUTIONS,
-                new Institution("서울병원", "seoul-hospital", "pw"));
+                new Institution("서울병원", "admin@seoul-hospital.test", "seoul-hospital", "pw"));
     }
 
     private MedicalUserPrincipal wardPrincipal() {

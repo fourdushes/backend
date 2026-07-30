@@ -51,6 +51,8 @@ public class InstitutionsUserService implements UserService {
     public String join(JoinUserRequest request, long institutionId) {
 
         commonUserService.validateDuplicateUser(request.getId());
+        commonUserService.checkPassword(request.getPassword(), request.getCheckPassword());
+
         String encodedPassword = passwordEncoder.encode(request.getPassword());
         Institution institution = institutionService.findById(institutionId);
 
@@ -93,7 +95,7 @@ public class InstitutionsUserService implements UserService {
         String refreshToken = tokenProvider.createRefreshToken(user.getId(), userType);
 
         redisTemplate.opsForValue().set(
-            "refresh-token:" + user.getId(),
+            "refresh-token:user:" + user.getId(),
             refreshToken,
             Duration.ofMillis(tokenProvider.getRefreshTokenValidityInMilliseconds())
         );

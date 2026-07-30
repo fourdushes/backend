@@ -1,5 +1,7 @@
 package tohear.hearo.user.guardian;
 
+import java.time.LocalDateTime;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -22,6 +24,7 @@ public class GuardUser {
     
     @Enumerated(EnumType.STRING)
     private UserType userType; // 사용자 유형 (보호자)
+    private LocalDateTime joinDateTime; // 회원가입한 시간
     
 
     public GuardUser() {
@@ -33,6 +36,7 @@ public class GuardUser {
         this.email = email;
         this.password = password;
         this.userType = userType;
+        this.joinDateTime = LocalDateTime.now();
     }
 
     public void changePassword(String newPassword) {

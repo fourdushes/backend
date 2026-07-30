@@ -38,7 +38,7 @@ class ChatMessageTest {
         WardUser ward = new WardUser("ward", "환자", "ward@test.com", "pw", UserType.WARD);
         InstitutionsUser doctor = new InstitutionsUser(
                 "doctor", "의사", "doctor@test.com", "pw", UserType.INSTITUTIONS,
-                new Institution("서울병원", "seoul-hospital", "pw"));
+                new Institution("서울병원", "admin@seoul-hospital.test", "seoul-hospital", "pw"));
         MedicalRequest request = new MedicalRequest(ward, doctor);
         request.accept();
         request.start();

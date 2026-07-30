@@ -35,7 +35,7 @@ class RequestValidationTest {
         request.setPassword(null);
         request.setUserType(null);
 
-        assertThat(validator.validate(request)).hasSize(6);
+        assertThat(validator.validate(request)).hasSize(7);
     }
 
     @Test
@@ -45,6 +45,7 @@ class RequestValidationTest {
         request.setName("사용자");
         request.setEmail("user@test.com");
         request.setPassword("password");
+        request.setCheckPassword("password");
         request.setUserType(tohear.hearo.user.auth.domain.UserType.WARD);
 
         assertThat(validator.validate(request))

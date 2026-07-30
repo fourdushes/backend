@@ -4,9 +4,9 @@
 
 HearO는 피보호자, 보호자, 의료기관을 연결하고 **대면 진료 현장의 대화와 진료 기록을 관리하는 백엔드 API**입니다.
 
-사용자 유형별 회원 관리와 JWT 인증을 제공하고, 보호자와 피보호자의 연결 신청·승인, 의료기관 검색과 대면 진료 요청, 진료 내용 기록, 음성 녹음 및 CLOVA Speech 기반 텍스트 변환, AI 진료 요약과 진료 기록 아카이브 조회 흐름을 구현했습니다.
+사용자 유형별 회원 관리와 JWT 인증을 제공하고, 기관 관리자 가입·승인과 소속 기관 사용자 관리, 보호자와 피보호자의 연결 신청·승인, 의료기관 검색과 대면 진료 요청, 진료 내용 기록, 음성 녹음 및 CLOVA Speech 기반 텍스트 변환, AI 진료 요약과 진료 기록 아카이브 조회 흐름을 구현했습니다.
 
-본 저장소는 Java 21과 Spring Boot 기반의 단일 백엔드 애플리케이션이며, MySQL에 서비스 데이터를 저장하고 Redis에 이메일 인증 상태를 관리합니다.
+본 저장소는 Java 21과 Spring Boot 기반의 단일 백엔드 애플리케이션이며, MySQL에 서비스 데이터를 저장하고 Redis에 이메일 인증 상태와 Refresh Token을 관리합니다.
 
 ---
 
@@ -26,9 +26,10 @@ HearO는 피보호자, 보호자, 의료기관을 연결하고 **대면 진료 �
 
 | 구분 | 구현 내용 |
 |---|---|
-| 사용자 관리 | 피보호자, 보호자, 의료기관 유형별 회원가입·로그인·아이디 찾기·비밀번호 변경 |
+| 사용자 관리 | 피보호자, 보호자, 기관 소속 사용자 유형별 회원가입·로그인·아이디 찾기·비밀번호 변경 |
+| 기관 관리자 | 기관 계정 가입·로그인·아이디 찾기·비밀번호 변경, 소속 사용자 상태별 페이지 조회와 승인·거절·삭제 |
 | 이메일 인증 | Gmail SMTP로 6자리 인증번호 발송, Redis TTL 기반 인증번호 검증 |
-| JWT 인증 | Access Token·Refresh Token 발급, Bearer Token 검증, 토큰 재발급 |
+| JWT 인증 | 일반 사용자와 기관 관리자 역할별 Access Token·Refresh Token 발급, Bearer Token 검증, 토큰 재발급 |
 | 마이페이지 | 사용자 유형별 본인 정보 조회 및 공통 이름 변경 |
 | 보호 관계 | 사용자 검색, 연결 신청, 신청 목록 조회, 승인·거절, 메인 보호자 관리, 보호 관계 삭제 |
 | 진료 요청 | 피보호자의 의료기관 검색·진료 요청, 의료기관의 요청 조회·수락·거절 |
@@ -64,7 +65,7 @@ Spring Boot REST API :8081
   +--> Treatment Completion ----------> AI Summary API
 ```
 
-인증이 필요한 API는 `Authorization: Bearer <ACCESS_TOKEN>` 헤더를 전달합니다. 커스텀 Argument Resolver가 토큰에서 사용자 ID와 유형을 읽어 각 서비스에 현재 사용자 정보를 제공합니다.
+인증이 필요한 API는 `Authorization: Bearer <ACCESS_TOKEN>` 헤더를 전달합니다. JWT의 `role`은 일반 사용자 계정과 기관 관리자 계정을 구분합니다. 일반 사용자 Resolver는 사용자 ID와 `UserType`을, 기관 관리자 Resolver는 기관 ID를 읽어 각 서비스에 현재 인증 주체를 제공합니다.
 
 ---
 
@@ -73,6 +74,7 @@ Spring Boot REST API :8081
 | 도메인 | 역할 | 주요 구성 |
 |---|---|---|
 | `user` | 사용자 및 인증 관리 | 피보호자, 보호자, 의료기관, 로그인, 메일 인증, 토큰 재발급 |
+| `institution` | 기관 관리자 및 소속 사용자 관리 | 기관 계정 인증, 기관 사용자 상태별 조회·승인·거절·삭제 |
 | `ai` | 진료 대화 요약 | 외부 AI 요청, 응답 검증·정규화 |
 | `care` | 보호 관계 관리 | 연결 신청, 승인·거절, 연결 대상 검색, 메인 보호자 관리 |
 | `medicaltreatment` | 대면 진료 기록 진행 | 의료기관 검색, 진료 요청, 진료 기록 공간, 메시지, 녹음 |
@@ -80,13 +82,20 @@ Spring Boot REST API :8081
 | `inquiry` | 사용자 문의 관리 | 문의 등록, 본인 문의 목록·상세 조회 |
 | `global` | 공통 기반 기능 | JWT, 공통 응답, 예외 처리, 애플리케이션 설정 |
 
-### 4.1 사용자 유형
+### 4.1 계정 역할
+
+| 값 | 의미 |
+|---|---|
+| `USER` | 피보호자·보호자·기관 소속 사용자 계정 |
+| `INSTITUTION` | 기관 자체를 관리하는 기관 관리자 계정 |
+
+### 4.2 일반 사용자 유형
 
 | 값 | 의미 |
 |---|---|
 | `WARD` | 진료를 요청하고 받는 피보호자 |
 | `GUARDIAN` | 피보호자의 진료 기록을 확인하는 보호자 |
-| `INSTITUTIONS` | 진료 요청을 처리하는 의료기관 |
+| `INSTITUTIONS` | 기관에 소속되어 진료 요청을 처리하는 사용자 |
 
 ---
 
@@ -130,6 +139,7 @@ src
 │   │   ├── care                 # 보호자-피보호자 연결
 │   │   ├── global               # JWT, 응답, 예외, 설정
 │   │   ├── inquiry              # 사용자 문의
+│   │   ├── institution          # 기관 관리자 인증과 소속 사용자 관리
 │   │   ├── medicaltreatment     # 진료 요청, 채팅, 녹음
 │   │   ├── user                 # 사용자, 인증, 메일
 │   │   └── HearoApplication.java
@@ -146,6 +156,7 @@ src
 | `src/main/java/tohear/hearo/medicaltreatment` | 진료 요청, 채팅, 녹음과 의료기관 검색 |
 | `src/main/java/tohear/hearo/archive` | 완료 진료 기록 저장 및 조회 |
 | `src/main/java/tohear/hearo/inquiry` | 사용자 문의 등록 및 본인 문의 조회 |
+| `src/main/java/tohear/hearo/institution` | 기관 관리자 계정과 소속 사용자 승인 상태 관리 |
 | `src/main/java/tohear/hearo/global` | 공통 인증·응답·예외 처리 |
 | `src/test/java/tohear/hearo` | 주요 도메인과 서비스 테스트 |
 
@@ -245,7 +256,26 @@ curl -i http://localhost:8081/api/health
 | `POST` | `/api/users/change-password` | 불필요 | 비밀번호 변경 |
 | `POST` | `/api/users/token/reissue` | 불필요 | Refresh Token으로 토큰 재발급 |
 
-### 9.2 마이페이지
+### 9.2 기관 관리자
+
+| Method | Endpoint | 인증 | 설명 |
+|---|---|---|---|
+| `GET` | `/api/institutions/search` | 불필요 | 기관명 부분 일치 페이지 검색 |
+| `POST` | `/api/institutions/join` | 불필요 | 이메일 인증 후 기관 관리자 계정 가입 |
+| `POST` | `/api/institutions/login` | 불필요 | 승인된 기관 관리자 로그인 및 토큰 발급 |
+| `POST` | `/api/institutions/id-find` | 불필요 | 기관명과 이메일로 로그인 ID 찾기 |
+| `POST` | `/api/institutions/to-change-password` | 불필요 | 비밀번호 재설정 임시 토큰 발급 |
+| `POST` | `/api/institutions/change-password` | 불필요 | 임시 토큰으로 기관 비밀번호 변경 |
+| `POST` | `/api/institutions/search-pending-user` | 필요 | 소속 승인 대기 사용자 페이지 조회 |
+| `POST` | `/api/institutions/search-approved-user` | 필요 | 소속 승인 사용자 페이지 조회 |
+| `POST` | `/api/institutions/search-reject-user` | 필요 | 소속 거절 사용자 페이지 조회 |
+| `POST` | `/api/institutions/user/approved` | 필요 | 소속 사용자 승인 |
+| `POST` | `/api/institutions/user/reject` | 필요 | 소속 사용자 거절 |
+| `POST` | `/api/institutions/user/delete` | 필요 | 승인된 소속 사용자를 삭제 상태로 변경 |
+
+소속 사용자 조회와 상태 변경 API에는 기관 관리자용 Access Token이 필요하며, 서버는 토큰에서 기관 ID를 가져와 다른 기관의 사용자에 대한 접근을 차단합니다. 기관 자체가 `APPROVED` 상태일 때만 로그인과 소속 사용자 관리가 가능합니다.
+
+### 9.3 마이페이지
 
 | Method | Endpoint | 인증 | 사용자 유형 | 설명 |
 |---|---|---|---|---|
@@ -256,7 +286,7 @@ curl -i http://localhost:8081/api/health
 
 마이페이지 조회는 JWT의 사용자 ID와 유형을 사용합니다. 이름 변경 요청은 사용자 ID나 유형을 받지 않고 `newName`만 받으며, 서비스가 로그인 사용자 유형에 맞는 테이블을 변경합니다.
 
-### 9.3 보호 관계
+### 9.4 보호 관계
 
 | Method | Endpoint | 인증 | 사용자 유형 | 설명 |
 |---|---|---|---|---|
@@ -275,7 +305,7 @@ curl -i http://localhost:8081/api/health
 
 연결 요청을 처음 승인할 때 아직 메인 보호자가 없으면 해당 보호자가 자동으로 메인 보호자로 지정됩니다. 연결 신청 목록과 연결된 보호자·피보호자 목록 응답에는 `careId`가 포함되며, 연결된 사용자 목록에는 `mainGuardUser`도 포함됩니다. 피보호자와 보호자는 목록에서 받은 `careId`를 이용해 본인이 당사자인 보호 관계를 삭제할 수 있습니다.
 
-### 9.4 피보호자 대면 진료
+### 9.5 피보호자 대면 진료
 
 | Method | Endpoint | 사용자 유형 | 설명 |
 |---|---|---|---|
@@ -291,7 +321,7 @@ curl -i http://localhost:8081/api/health
 
 진료 종료 API는 시스템 메시지를 제외한 대화를 시간순으로 합쳐 AI Summary API에 전달합니다. 응답과 아카이브 상세에는 `mainSymptoms`, `doctorOpinion`, `remember`, `questionAnswer`, `difficultWords`가 포함됩니다. 일부 요약 필드만 비어 있으면 해당 값을 `"없음"`으로 저장하고, 전체 요약이 비어 있거나 외부 서비스 호출이 실패하면 HTTP `502`를 반환합니다.
 
-### 9.5 의료기관 대면 진료
+### 9.6 의료기관 대면 진료
 
 | Method | Endpoint | 사용자 유형 | 설명 |
 |---|---|---|---|
@@ -304,7 +334,7 @@ curl -i http://localhost:8081/api/health
 
 모든 진료 API는 JWT 인증이 필요합니다. 녹음 완료 API의 Content-Type은 `multipart/form-data`입니다. 코드의 `ChatRoom`, `ChatMessage` 명칭은 네트워크 기반 비대면 채팅이 아니라 대면 진료 과정의 텍스트·음성 기록을 저장하는 내부 도메인 명칭으로 사용합니다.
 
-### 9.6 진료 아카이브
+### 9.7 진료 아카이브
 
 | Method | Endpoint | 사용자 유형 | 설명 |
 |---|---|---|---|
@@ -316,7 +346,7 @@ curl -i http://localhost:8081/api/health
 
 아카이브 상세 응답은 `archiveId`, `title`, `archiveDate`, `text`, `allChatText`와 AI 요약 필드 `mainSymptoms`, `doctorOpinion`, `remember`, `questionAnswer`, `difficultWords`를 반환합니다. 보호자는 해당 피보호자와 `APPROVED` 상태의 보호 관계가 있을 때만 목록과 상세를 조회할 수 있습니다.
 
-### 9.7 문의
+### 9.8 문의
 
 | Method | Endpoint | 사용자 유형 | 설명 |
 |---|---|---|---|
@@ -326,7 +356,7 @@ curl -i http://localhost:8081/api/health
 
 문의 등록은 `title`과 `content`를 받으며 제목은 100자, 내용은 5,000자 이하로 제한됩니다. 목록은 생성일시 내림차순으로 반환되고 `page`, `size` 페이지네이션 파라미터를 지원합니다.
 
-### 9.8 공개 기관 검색
+### 9.9 공개 기관 검색
 
 | Method | Endpoint | 인증 | 설명 |
 |---|---|---|---|
@@ -334,18 +364,24 @@ curl -i http://localhost:8081/api/health
 
 기본 페이지는 0, 크기는 10이며 응답은 Spring Data `Page<InstitutionSearchResponse>` 구조입니다.
 
-### 9.9 주요 요청 데이터
+### 9.10 주요 요청 데이터
 
 | API | 요청 필드 | 설명 |
 |---|---|---|
 | 이메일 인증번호 발송 | `email` | 인증번호를 받을 이메일 |
 | 이메일 인증번호 확인 | `email`, `checkNumber` | 이메일과 6자리 인증번호 |
-| 회원가입 | `id`, `name`, `email`, `password`, `userType` | 이메일 인증 완료 후 사용자 유형별 계정 생성 |
+| 회원가입 | `id`, `name`, `email`, `password`, `checkPassword`, `userType` | 이메일 인증 완료 후 사용자 유형별 계정 생성 |
 | 로그인 | `id`, `password` | 로그인 정보 |
 | 아이디 찾기 | `name`, `email` | 이름과 이메일로 아이디 조회 |
 | 비밀번호 변경 사전 인증 | `name`, `email` | 이메일 인증 상태와 사용자 확인 |
 | 비밀번호 변경 | `id`, `newPassword`, `checkNewPassword`, `userType`, `tempToken` | 새 비밀번호와 임시 토큰 |
 | 토큰 재발급 | `refreshToken` | 로그인 시 발급된 Refresh Token |
+| 기관 가입 | `institutionName`, `email`, `institutionId`, `password`, `checkPassword` | 이메일 인증 후 기관 관리자 계정 생성 |
+| 기관 로그인 | `loginId`, `password` | 승인된 기관 관리자 로그인 |
+| 기관 아이디 찾기 | `institutionName`, `email` | 기관명과 이메일로 로그인 ID 조회 |
+| 기관 비밀번호 변경 사전 인증 | `institutionName`, `email` | 이메일 인증 상태와 기관 정보 확인 |
+| 기관 비밀번호 변경 | `institutionId`, `newPassword`, `checkNewPassword`, `tempToken` | 기관 비밀번호 재설정 |
+| 기관 사용자 상태 변경 | `institutionsUserId` | 승인·거절·삭제할 소속 사용자 ID |
 | 이름 변경 | `newName` | 로그인 사용자의 새 이름 |
 | 보호 관계 신청 | `wardUserId` | 연결할 피보호자 ID |
 | 보호 관계 승인·거절 | `careId` | 상태를 변경할 연결 ID |
@@ -373,6 +409,13 @@ Authorization: Bearer <ACCESS_TOKEN>
 ```
 
 Access Token 기본 유효기간은 2일, Refresh Token 기본 유효기간은 14일입니다.
+
+JWT의 `role` 클레임은 `USER` 또는 `INSTITUTION`입니다. `USER` 토큰에는 `userType`이 추가되며, `INSTITUTION` 토큰의 subject에는 기관 ID가 저장됩니다. Refresh Token은 충돌을 피하기 위해 Redis에 역할별 키로 저장됩니다.
+
+```text
+refresh-token:user:{userId}
+refresh-token:institution:{institutionId}
+```
 
 ### 10.2 공통 응답 형식
 
@@ -488,7 +531,9 @@ curl -X POST http://localhost:8081/api/medical-treatment/institution/chat-rooms/
 - Redis가 `6379` 포트에서 실행 중인지 확인합니다.
 - 이메일 인증번호는 `mail:<email>` 키로 3분간 저장됩니다.
 - 인증 성공 상태는 `mail-verified:<email>` 키로 10분간 유지됩니다.
-- 회원가입 성공 시 사용한 `mail-verified:<email>` 키는 즉시 삭제됩니다.
+- 일반 사용자 Refresh Token은 `refresh-token:user:<userId>` 키로 저장됩니다.
+- 기관 관리자 Refresh Token은 `refresh-token:institution:<institutionId>` 키로 저장됩니다.
+- 일반 사용자 회원가입 성공 시 사용한 `mail-verified:<email>` 키는 즉시 삭제됩니다.
 
 ### JWT 인증 실패
 
