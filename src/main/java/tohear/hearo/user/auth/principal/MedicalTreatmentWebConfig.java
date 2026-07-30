@@ -7,15 +7,18 @@ import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import lombok.RequiredArgsConstructor;
+import tohear.hearo.institution.auth.InstitutionArgumentResolver;
 
 @Configuration
 @RequiredArgsConstructor
 public class MedicalTreatmentWebConfig implements WebMvcConfigurer {
 
     private final MedicalUserArgumentResolver medicalUserArgumentResolver;
+    private final InstitutionArgumentResolver institutionArgumentResolver;
 
     @Override
     public void addArgumentResolvers(List<HandlerMethodArgumentResolver> resolvers) {
         resolvers.add(medicalUserArgumentResolver);
+        resolvers.add(institutionArgumentResolver);
     }
 }

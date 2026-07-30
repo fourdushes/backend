@@ -16,6 +16,7 @@ public class Institution {
     @Column(name = "Institution_id")
     private Long id;
     private String institutionName;
+    private String email;
     private String institutionLoginId;
     private String passward;
     private InstitutionState institutionState;
@@ -23,8 +24,9 @@ public class Institution {
     public Institution() {
     }
 
-    public Institution(String institutionName, String institutionLoginId, String passward) {
+    public Institution(String institutionName, String email,String institutionLoginId, String passward) {
         this.institutionName = institutionName;
+        this.email = email;
         this.institutionLoginId = institutionLoginId;
         this.passward = passward;
         this.institutionState = InstitutionState.PENDING;

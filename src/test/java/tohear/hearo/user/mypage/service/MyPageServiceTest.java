@@ -1,15 +1,15 @@
 package tohear.hearo.user.mypage.service;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.when;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.when;
 
 import tohear.hearo.institution.domain.Institution;
 import tohear.hearo.institution.service.InstitutionService;
@@ -74,7 +74,8 @@ class MyPageServiceTest {
 
     @Test
     void institutionCanReadOwnMyPage() {
-        Institution organization = new Institution("서울병원", "seoul-hospital", "pw");
+        Institution organization = new Institution(
+                "서울병원", "admin@seoul-hospital.test", "seoul-hospital", "pw");
         ReflectionTestUtils.setField(organization, "id", 10L);
         InstitutionsUser institutionUser = new InstitutionsUser(
             "institution", "기관", "institution@test.com", "pw",
@@ -96,7 +97,8 @@ class MyPageServiceTest {
             "ward", "기존 이름", "ward@test.com", "pw", UserType.WARD);
         GuardUser guardian = new GuardUser(
             "guard", "기존 이름", "guard@test.com", "pw", UserType.GUARDIAN);
-        Institution organization = new Institution("서울병원", "seoul-hospital", "pw");
+        Institution organization = new Institution(
+                "서울병원", "admin@seoul-hospital.test", "seoul-hospital", "pw");
         InstitutionsUser institution = new InstitutionsUser(
             "institution", "기존 이름", "institution@test.com", "pw",
             UserType.INSTITUTIONS, organization);

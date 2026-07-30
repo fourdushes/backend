@@ -11,6 +11,7 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
+import tohear.hearo.global.dto.AccountRole;
 import tohear.hearo.user.auth.domain.UserType;
 
 @Component
@@ -34,6 +35,7 @@ public class JwtTokenProvider {
     public String createAccessToken(String userId, UserType userType) {
         return createToken(
             userId,
+            AccountRole.USER,
             userType,
             "ACCESS",
             accessTokenValidityInMilliseconds
@@ -43,9 +45,31 @@ public class JwtTokenProvider {
     public String createRefreshToken(String userId, UserType userType) {
         return createToken(
             userId,
+            AccountRole.USER,
             userType,
             "REFRESH",
             refreshTokenValidityInMilliseconds
+        );
+    }
+
+    // 기관용 오버로딩
+    public String createAccessToken(Long institutionId) {
+        return createToken(
+                String.valueOf(institutionId),
+                AccountRole.INSTITUTION,
+                null,
+                "ACCESS",
+                accessTokenValidityInMilliseconds
+        );
+    }
+
+    public String createRefreshToken(Long institutionId) {
+        return createToken(
+                String.valueOf(institutionId),
+                AccountRole.INSTITUTION,
+                null,
+                "REFRESH",
+                refreshTokenValidityInMilliseconds
         );
     }
     public String getUserId(String token) {
@@ -53,10 +77,20 @@ public class JwtTokenProvider {
     }
 
     public UserType getUserType(String token) {
+        if (getAccountRole(token) != AccountRole.USER) {
+            throw new IllegalArgumentException("사용자 토큰이 아닙니다.");
+        }
+
         String userTypeStr = getClaims(token).get("userType", String.class); // 클레임에서 userType 문자열 꺼내기
             
         return UserType.valueOf(userTypeStr); // 문자열을 다시 오리지널 Enum 타입으로 변환해서 반환
     }
+
+    public AccountRole getAccountRole(String token) {
+    String role = getClaims(token).get("role", String.class);
+
+    return AccountRole.valueOf(role);
+}
 
     public void validateAccessToken(String token) {
         String tokenType = getClaims(token).get("tokenType", String.class);
@@ -82,10 +116,17 @@ public class JwtTokenProvider {
      * claims는 JWT 토큰 안에 묶이는 정보 묶음이다
      * 여기서는 유저 아이디 + 유저 타입 + 토큰 타입을 넣는다
      */
-    private String createToken(String userId, UserType userType, String tokenType, long validityInMilliseconds) {
+    private String createToken(String userId, AccountRole role, UserType userType, String tokenType, long validityInMilliseconds) {
         Claims claims = Jwts.claims().setSubject(userId);
-        claims.put("userType", userType.name());
+
+        // 모든 로그인 주체가 가지는 값
+        claims.put("role", role.name());
         claims.put("tokenType", tokenType);
+
+        // 일반 사용자 토큰에만 추가
+        if (userType != null) {
+            claims.put("userType", userType.name());
+        }
 
         Date now = new Date();
         Date validity = new Date(now.getTime() + validityInMilliseconds);

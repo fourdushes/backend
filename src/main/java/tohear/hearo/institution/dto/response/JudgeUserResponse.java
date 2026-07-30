@@ -11,7 +11,10 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class JudgeUserResponse {
 
-    private Long count;
+    private long totalCount;
+    private int currentPage;
+    private int pageSize;
+    private boolean hasNext;
     private List<JudgeUserDto> judgeUserList;
 
 }

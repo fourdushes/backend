@@ -7,10 +7,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
+import tohear.hearo.global.dto.AccountRole;
 import tohear.hearo.global.security.JwtTokenProvider;
+import tohear.hearo.user.auth.domain.UserType;
 import tohear.hearo.user.auth.dto.request.TokenReissueRequest;
 import tohear.hearo.user.auth.dto.response.TokenReissueResponse;
-import tohear.hearo.user.auth.domain.UserType;
 
 @Service
 @RequiredArgsConstructor
@@ -28,9 +29,15 @@ public class TokenReissueService {
 
         String userId = tokenProvider.getUserId(refreshToken);
 
-        UserType userType = tokenProvider.getUserType(refreshToken);
+        AccountRole role = tokenProvider.getAccountRole(refreshToken);
 
-        String redisKey = "refresh-token:" + userId;
+        String redisKey;
+
+        if (role == AccountRole.INSTITUTION) {
+            redisKey = "refresh-token:institution:" + userId;
+        } else {
+            redisKey = "refresh-token:user:" + userId;
+        }
 
         String savedRefreshToken = redisTemplate.opsForValue().get(redisKey);
 
@@ -42,9 +49,21 @@ public class TokenReissueService {
             throw new IllegalArgumentException("Refresh Token이 일치하지 않습니다.");
         }
 
-        String newAccessToken = tokenProvider.createAccessToken(userId, userType);
+        String newAccessToken;
+        String newRefreshToken;
 
-        String newRefreshToken = tokenProvider.createRefreshToken(userId, userType);
+        if (role == AccountRole.INSTITUTION) {
+            Long institutionId = Long.valueOf(userId);
+
+            newAccessToken = tokenProvider.createAccessToken(institutionId);
+            newRefreshToken = tokenProvider.createRefreshToken(institutionId);
+        } else {
+            UserType userType = tokenProvider.getUserType(refreshToken);
+
+            newAccessToken = tokenProvider.createAccessToken(userId, userType);
+            newRefreshToken = tokenProvider.createRefreshToken(userId, userType);
+        }
+
 
         // 기존 Refresh Token을 새 토큰으로 교체
         redisTemplate.opsForValue().set(

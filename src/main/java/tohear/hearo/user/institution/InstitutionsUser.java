@@ -1,5 +1,7 @@
 package tohear.hearo.user.institution;
 
+import java.time.LocalDateTime;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -33,6 +35,8 @@ public class InstitutionsUser {
 
     @Enumerated(EnumType.STRING)
     private InstitutionState institutionState; // 기관 승인 상태
+    private LocalDateTime sendRequestDateTime; // 기관에 가입 승인을 보낸 시간
+    private LocalDateTime joinDateTime; // 회원가입한 시간
 
     public InstitutionsUser() {
     }
@@ -45,6 +49,8 @@ public class InstitutionsUser {
         this.userType = userType;
         this.institution = institution;
         this.institutionState = InstitutionState.PENDING;
+        this.sendRequestDateTime = LocalDateTime.now();
+        this.joinDateTime = LocalDateTime.now();
     }
 
     public void changePassword(String newPassword) {
@@ -53,5 +59,17 @@ public class InstitutionsUser {
 
     public void changeName(String newName) {
         this.name = newName;
+    }
+
+    public void approved() {
+        this.institutionState = InstitutionState.APPROVED;
+    }
+
+    public void reject() {
+        this.institutionState = InstitutionState.REJECTED;
+    }
+
+    public void delete() {
+        this.institutionState = InstitutionState.DELETE;
     }
 }

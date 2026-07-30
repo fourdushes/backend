@@ -44,7 +44,10 @@ public class GuardUserService implements UserService {
     public String join(JoinUserRequest request) {
 
         commonUserService.validateDuplicateUser(request.getId());
+        commonUserService.checkPassword(request.getPassword(), request.getCheckPassword());
+
         String encodedPassword = passwordEncoder.encode(request.getPassword());
+
         GuardUser user = new GuardUser(request.getId(), request.getName(), request.getEmail(), encodedPassword, request.getUserType());
         userRepository.save(user);
         return user.getId();
@@ -72,7 +75,7 @@ public class GuardUserService implements UserService {
         String refreshToken = tokenProvider.createRefreshToken(user.getId(), userType);
 
         redisTemplate.opsForValue().set(
-            "refresh-token:" + user.getId(),
+            "refresh-token:user:" + user.getId(),
             refreshToken,
             Duration.ofMillis(tokenProvider.getRefreshTokenValidityInMilliseconds())
         );
