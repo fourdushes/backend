@@ -279,7 +279,7 @@ public class ClovaSpeechClient {
 		httpPost.setHeaders(headers);
 		HttpEntity httpEntity = MultipartEntityBuilder.create()
 			.addTextBody("params", gson.toJson(nestRequestEntity), ContentType.APPLICATION_JSON)
-			.addBinaryBody("media", file, ContentType.APPLICATION_OCTET_STREAM, file.getName())
+			.addBinaryBody("media", file, ContentType.MULTIPART_FORM_DATA, file.getName())
 			.build();
 		httpPost.setEntity(httpEntity);
 		return execute(httpPost);
@@ -306,14 +306,8 @@ public class ClovaSpeechClient {
 				throw new SpeechRecognitionException("음성 변환 서비스 응답을 처리하지 못했습니다.", e);
 			}
 
-			if (response == null) {
-				throw new SpeechRecognitionException("음성 변환 서비스 응답이 비어 있습니다.");
-			}
-			if (!"COMPLETED".equalsIgnoreCase(response.getResult())) {
-				throw new SpeechRecognitionException(
-					"음성 변환 실패: result=" + response.getResult()
-						+ ", message=" + response.getMessage()
-				);
+			if (response == null || !"COMPLETED".equalsIgnoreCase(response.getResult())) {
+				throw new SpeechRecognitionException("음성 변환 서비스가 변환을 완료하지 못했습니다.");
 			}
 			if (response.getText() == null || response.getText().isBlank()) {
 				throw new SpeechRecognitionException("음성 변환 결과가 비어 있습니다.");
