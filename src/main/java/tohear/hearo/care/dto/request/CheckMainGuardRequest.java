@@ -5,9 +5,8 @@ import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
-// 안씀
-public class WardCheckCareListRequest {
+public class CheckMainGuardRequest {
 
-    private String wardUserId; // 피보호자 아이디
+    private String changeGuardUserId; // 변경될 메인 보호자
 
 }

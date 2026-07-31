@@ -1,5 +1,6 @@
 package tohear.hearo.user.auth.controller;
 
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -19,7 +20,7 @@ public class TokenReissueController {
     private final TokenReissueService tokenReissueService;
 
     @PostMapping("/token/reissue")
-    public Result reissueToken(@RequestBody TokenReissueRequest request) {
+    public Result reissueToken(@Valid @RequestBody TokenReissueRequest request) {
         TokenReissueResponse response = tokenReissueService.reissue(request);
 
         return new Result<>(

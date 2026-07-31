@@ -2,6 +2,7 @@ package tohear.hearo.medicaltreatment.controller;
 
 import java.util.List;
 
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import lombok.RequiredArgsConstructor;
 import tohear.hearo.global.response.Result;
+import tohear.hearo.ai.dto.AiResponse;
 import tohear.hearo.user.auth.principal.CurrentMedicalUser;
 import tohear.hearo.user.auth.principal.MedicalUserPrincipal;
 import tohear.hearo.medicaltreatment.chat.dto.request.SendTextMessageRequest;
@@ -97,14 +99,14 @@ public class WardMedicalTreatmentController {
     public Result<ChatMessageResponse> sendMessage(
             @CurrentMedicalUser MedicalUserPrincipal principal,
             @PathVariable Long chatRoomId,
-            @RequestBody SendTextMessageRequest request) {
+            @Valid @RequestBody SendTextMessageRequest request) {
         return new Result<>("200", "채팅 메시지를 전송했습니다.",
                 medicalTreatmentService.sendWardMessage(principal, chatRoomId, request.getContent()));
     }
 
     // 피보호자가 진료를 종료하고 전체 채팅 내용을 Archive에 저장합니다.
     @PostMapping("/chat-rooms/{chatRoomId}/complete")
-    public Result<ChatRoomResponse> completeTreatment(
+    public Result<AiResponse> completeTreatment(
             @CurrentMedicalUser MedicalUserPrincipal principal,
             @PathVariable Long chatRoomId) {
         return new Result<>("200", "진료를 종료했습니다.",

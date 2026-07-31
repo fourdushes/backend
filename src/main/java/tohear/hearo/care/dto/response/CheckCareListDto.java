@@ -17,5 +17,6 @@ public class CheckCareListDto {
     private CareState careState; // 연결 상태 (승인, 대기, 거절)
     private LocalDateTime createdAt; // 연결 생성 시간
     private LocalDateTime updatedAt; // 연결 상태 변경 시간
+    private Long careId;
 
 }

@@ -10,8 +10,9 @@ import tohear.hearo.user.auth.domain.UserType;
 @AllArgsConstructor
 public class GuardSearchDto {
 
+    private long careId;
     private String guardUserId;
     private String guardUserName;
     private UserType userType;
-
+    private boolean mainGuardUser;
 }

@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import tohear.hearo.archive.domain.Archive;
+import tohear.hearo.institution.domain.Institution;
 import tohear.hearo.medicaltreatment.medicalrequest.domain.MedicalRequest;
 import tohear.hearo.user.auth.domain.UserType;
 import tohear.hearo.user.institution.InstitutionsUser;
@@ -36,7 +37,8 @@ class ChatMessageTest {
     private ChatRoom room() {
         WardUser ward = new WardUser("ward", "환자", "ward@test.com", "pw", UserType.WARD);
         InstitutionsUser doctor = new InstitutionsUser(
-                "doctor", "의사", "doctor@test.com", "pw", UserType.INSTITUTIONS);
+                "doctor", "의사", "doctor@test.com", "pw", UserType.INSTITUTIONS,
+                new Institution("서울병원", "admin@seoul-hospital.test", "seoul-hospital", "pw"));
         MedicalRequest request = new MedicalRequest(ward, doctor);
         request.accept();
         request.start();

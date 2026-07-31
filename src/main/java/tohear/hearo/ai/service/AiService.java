@@ -1,5 +1,7 @@
 package tohear.hearo.ai.service;
 
+import java.util.stream.Stream;
+
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
@@ -23,18 +25,49 @@ public class AiService {
                 .uri("/api/final-report") // AI 팀이 준 엔드포인트
                 .body(request)
                 .retrieve()
-                .body(AiResponse.class); // 응답을 String으로 받거나 DTO로 매핑
+                .body(AiResponse.class);
 
-                if (response == null || response.getSummary() == null || response.getSummary().isBlank()) {
-                    throw new AiSummaryException("AI 요약 결과가 비어 있습니다.");
-                }
+            validateAndNormalizeResponse(response);
 
             return response;
         } catch (AiSummaryException e) {
             throw e;
-        } catch(RestClientException e) {
+        } catch (RestClientException e) {
             throw new AiSummaryException("AI 요약 서비스 연결에 실패했습니다.", e);
         }
-        
     }
+
+    private void validateAndNormalizeResponse(AiResponse response) {
+        if (response == null) {
+            throw new AiSummaryException("AI 요약 응답이 없습니다.");
+        }
+
+        boolean allSummaryFieldsBlank = Stream.of(
+                response.getMainSymptoms(),
+                response.getDoctorOpinion(),
+                response.getRemember(),
+                response.getQuestionAnswer(),
+                response.getDifficultWords()
+            )
+            .allMatch(this::isBlank);
+
+        if (allSummaryFieldsBlank) {
+            throw new AiSummaryException("AI 요약 결과가 모두 비어 있습니다.");
+        }
+
+        response.setMainSymptoms(defaultValue(response.getMainSymptoms()));
+        response.setDoctorOpinion(defaultValue(response.getDoctorOpinion()));
+        response.setRemember(defaultValue(response.getRemember()));
+        response.setQuestionAnswer(defaultValue(response.getQuestionAnswer()));
+        response.setDifficultWords(defaultValue(response.getDifficultWords()));
+    }
+
+    private String defaultValue(String value) {
+        return isBlank(value) ? "없음" : value.trim();
+    }
+
+    private boolean isBlank(String value) {
+        return value == null || value.isBlank();
+    }
+
 }

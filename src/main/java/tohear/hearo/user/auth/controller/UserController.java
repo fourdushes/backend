@@ -2,9 +2,12 @@ package tohear.hearo.user.auth.controller;
 
 import java.util.List;
 
+import jakarta.validation.Valid;
+
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import lombok.RequiredArgsConstructor;
@@ -20,6 +23,7 @@ import tohear.hearo.user.auth.dto.response.ToChangePasswordResponse;
 import tohear.hearo.user.auth.mail.MailService;
 import tohear.hearo.user.auth.service.CommonUserService;
 import tohear.hearo.user.auth.service.UserService;
+import tohear.hearo.user.institution.InstitutionsUserService;
 
 @RestController
 @RequiredArgsConstructor
@@ -31,7 +35,7 @@ public class UserController {
     private final MailService mailService;
 
     @PostMapping("/join") // 회원 가입, 사용자 유형에 따라 다른 서비스 호출
-    public Result join(@RequestBody JoinUserRequest request) {
+    public Result join(@Valid @RequestBody JoinUserRequest request, @RequestParam(required = false) Long institutionId) {
 
         mailService.validateVerifiedEmail(request.getEmail());
         commonUserService.validateEmailAvailable(request.getEmail());
@@ -41,7 +45,19 @@ public class UserController {
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("유효하지 않은 사용자 유형입니다."));
 
-        String userId = userService.join(request);
+        String userId;
+
+        if (request.getUserType() == UserType.INSTITUTIONS) {
+            if (institutionId == null) {
+                throw new IllegalArgumentException("기관 선택은 필수입니다.");
+            }
+
+            InstitutionsUserService institutionService = (InstitutionsUserService) userService;
+            userId = institutionService.join(request, institutionId);
+
+        } else {
+            userId = userService.join(request);
+        }
 
         mailService.consumeVerifiedEmail(request.getEmail());
 
@@ -49,7 +65,7 @@ public class UserController {
     }
 
     @PostMapping("/login") // 로그인, 사용자 유형에 따라 다른 서비스 호출
-    public Result login(@RequestBody LoginUserRequest request) {
+    public Result login(@Valid @RequestBody LoginUserRequest request) {
 
         UserType userType = commonUserService.checkUserTypeById(request.getId());
 
@@ -64,7 +80,7 @@ public class UserController {
     }
 
     @PostMapping("/find-id") // 아이디 찾기, 이메일로 사용자 유형 확인 후 해당 서비스에서 아이디 찾기
-    public Result findId(@RequestBody IdFindRequest request) {
+    public Result findId(@Valid @RequestBody IdFindRequest request) {
 
         UserType userType = commonUserService.checkUserTypeByEmail(request.getEmail());
         
@@ -79,7 +95,7 @@ public class UserController {
     }
 
     @PostMapping("/to-change-password")
-    public Result toChangePassword(@RequestBody ToChangePasswordRequest request) {
+    public Result toChangePassword(@Valid @RequestBody ToChangePasswordRequest request) {
 
         UserType userType = commonUserService.checkUserTypeByEmail(request.getEmail());
 
@@ -95,7 +111,7 @@ public class UserController {
     }
 
     @PostMapping("/change-password")
-    public Result changePassword(@RequestBody ChangePasswordRequest request) {
+    public Result changePassword(@Valid @RequestBody ChangePasswordRequest request) {
 
         UserService userService = userServices.stream()
             .filter(service -> service.supports(request.getUserType()))

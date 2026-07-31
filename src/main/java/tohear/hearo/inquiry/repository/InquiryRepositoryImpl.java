@@ -1,10 +1,5 @@
 package tohear.hearo.inquiry.repository;
 
-import static tohear.hearo.inquiry.domain.QInquiry.inquiry;
-import static tohear.hearo.user.guardian.QGuardUser.guardUser;
-import static tohear.hearo.user.institution.QInstitutionsUser.institutionsUser;
-import static tohear.hearo.user.ward.QWardUser.wardUser;
-
 import java.util.List;
 import java.util.Optional;
 
@@ -15,6 +10,11 @@ import org.springframework.data.domain.Pageable;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.StringExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
+
+import static tohear.hearo.inquiry.domain.QInquiry.inquiry;
+import static tohear.hearo.user.guardian.QGuardUser.guardUser;
+import static tohear.hearo.user.institution.QInstitutionsUser.institutionsUser;
+import static tohear.hearo.user.ward.QWardUser.wardUser;
 
 import lombok.RequiredArgsConstructor;
 import tohear.hearo.inquiry.dto.response.InquiryResponse;

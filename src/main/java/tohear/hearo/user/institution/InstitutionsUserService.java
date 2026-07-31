@@ -11,6 +11,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
 import tohear.hearo.global.security.JwtTokenProvider;
+import tohear.hearo.institution.domain.Institution;
+import tohear.hearo.institution.service.InstitutionService;
 import tohear.hearo.user.auth.domain.UserType;
 import tohear.hearo.user.auth.dto.request.ChangePasswordRequest;
 import tohear.hearo.user.auth.dto.request.IdFindRequest;
@@ -32,8 +34,9 @@ public class InstitutionsUserService implements UserService {
     private final PasswordEncoder passwordEncoder;
     private final CommonUserService commonUserService;
     private final StringRedisTemplate redisTemplate;
+    private final InstitutionService institutionService;
 
-     @Override
+    @Override
     public boolean supports(UserType userType) {
         return userType == UserType.INSTITUTIONS;
     }
@@ -41,10 +44,27 @@ public class InstitutionsUserService implements UserService {
     @Override
     @Transactional
     public String join(JoinUserRequest request) {
+        throw new IllegalArgumentException("기관 사용자는 기관 선택이 필요합니다.");
+    }
+
+    @Transactional
+    public String join(JoinUserRequest request, long institutionId) {
 
         commonUserService.validateDuplicateUser(request.getId());
+        commonUserService.checkPassword(request.getPassword(), request.getCheckPassword());
+
         String encodedPassword = passwordEncoder.encode(request.getPassword());
-        InstitutionsUser user = new InstitutionsUser(request.getId(), request.getName(), request.getEmail(), encodedPassword, request.getUserType());
+        Institution institution = institutionService.findById(institutionId);
+
+        InstitutionsUser user = new InstitutionsUser(
+            request.getId(),
+            request.getName(),
+            request.getEmail(),
+            encodedPassword,
+            request.getUserType(),
+            institution
+        );
+
         userRepository.save(user);
         return user.getId();
     }
@@ -65,13 +85,17 @@ public class InstitutionsUserService implements UserService {
             throw new IllegalArgumentException("비밀번호가 올바르지 않습니다.");
         }
 
+        if (user.getInstitutionState() != InstitutionState.APPROVED) {
+            throw new IllegalArgumentException("기관 승인이 완료되지 않았습니다.");
+        }
+
         UserType userType = user.getUserType();
         
         String accessToken = tokenProvider.createAccessToken(user.getId(), userType);
         String refreshToken = tokenProvider.createRefreshToken(user.getId(), userType);
 
         redisTemplate.opsForValue().set(
-            "refresh-token:" + user.getId(),
+            "refresh-token:user:" + user.getId(),
             refreshToken,
             Duration.ofMillis(tokenProvider.getRefreshTokenValidityInMilliseconds())
         );

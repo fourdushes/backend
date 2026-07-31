@@ -79,4 +79,11 @@ public class CommonUserService {
         }
     }
 
+    // 비밀번호 비밀번호 확인 검증
+    public void checkPassword(String password, String checkPassword) {
+        if (!password.equals(checkPassword)) {
+            throw new IllegalStateException("비밀번호가 일치하지 않습니다.");
+        }
+    }
+
 }
