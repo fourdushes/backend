@@ -48,6 +48,8 @@ spec:
               value: update
             - name: JPA_SHOW_SQL
               value: "false"
+            - name: CORS_ALLOWED_ORIGINS
+              value: http://43.203.49.76
             - name: AWS_REGION
               value: ap-northeast-2
             - name: AWS_S3_BUCKET
@@ -93,11 +95,10 @@ metadata:
   labels:
     app: hearo-backend
 spec:
-  type: NodePort
+  type: ClusterIP
   selector:
     app: hearo-backend
   ports:
     - name: http
       port: 8081
       targetPort: 8081
-      nodePort: 30111
