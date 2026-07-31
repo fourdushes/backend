@@ -468,3 +468,50 @@ curl -X POST http://localhost:8081/api/medical-treatment/institution/chat-rooms/
 HearO는 사용자 유형별 권한과 보호 관계를 중심으로 대면 진료 요청부터 현장 대화 기록, 음성 텍스트 변환, 완료된 진료 기록 조회까지 하나의 흐름으로 연결합니다.
 
 Strategy 형태의 사용자 서비스 분기, 커스텀 JWT 사용자 주입, QueryDSL 기반 조회, Redis TTL 이메일 인증, 외부 Speech-to-Text 연동을 통해 실제 서비스 백엔드에서 필요한 인증·영속성·외부 API 통합을 함께 다룹니다.
+
+---
+
+## Web CI/CD
+
+백엔드 배포는 GitHub Actions, Amazon ECR, Kubernetes, Argo CD를 이용한 GitOps 방식으로 자동화되어 있습니다.
+
+```text
+main 브랜치 Push 또는 수동 실행
+  |
+  v
+Gradle Test (MySQL 8.4 + Redis 7.4)
+  |
+  v
+Docker Image Build
+  |
+  v
+Amazon ECR Push (Commit SHA Tag)
+  |
+  v
+k8s/hearo-backend.yaml 이미지 갱신 및 Commit
+  |
+  v
+Argo CD가 변경 감지 후 Kubernetes 배포
+```
+
+| 단계 | 동작 |
+|---|---|
+| Trigger | `main` 브랜치 Push 또는 GitHub Actions의 수동 실행(`workflow_dispatch`) |
+| Test | GitHub Actions Service Container로 MySQL과 Redis를 실행한 뒤 `./gradlew clean test --no-daemon` 수행 |
+| Build | 멀티 스테이지 `Dockerfile`로 Java 21 애플리케이션 이미지 빌드 |
+| Push | GitHub OIDC로 AWS IAM Role을 위임받아 `hearo-backend` ECR 저장소에 이미지 Push |
+| Tag | 배포 이미지를 Git Commit SHA로 태깅하여 버전 추적 가능 |
+| Manifest Update | `k8s/hearo-backend.yaml`의 이미지 주소를 새 태그로 변경하고 `main`에 자동 Commit |
+| Deploy | Argo CD가 Git 변경 사항을 감지하여 Kubernetes Deployment와 Service에 반영 |
+
+워크플로우 파일은 `.github/workflows/cicd.yml`, 컨테이너 빌드 설정은 `Dockerfile`, 배포 매니페스트는 `k8s/hearo-backend.yaml`에서 확인할 수 있습니다. `k8s/**`와 Markdown 파일만 변경한 Push는 파이프라인을 실행하지 않으며, 자동 매니페스트 Commit에는 `[skip ci]`가 포함되어 중복 실행을 방지합니다.
+
+### GitHub Actions 설정값
+
+| 유형 | 이름 | 설명 |
+|---|---|---|
+| Variable | `AWS_REGION` | ECR이 위치한 AWS 리전 |
+| Variable | `AWS_ACCOUNT_ID` | AWS 계정 ID |
+| Secret | `AWS_ROLE_ARN` | GitHub Actions가 OIDC로 Assume할 IAM Role ARN |
+
+AWS IAM Role에는 ECR 이미지 Push 권한이 필요하며, GitHub Actions에는 Kubernetes 매니페스트를 갱신하기 위한 `contents: write` 권한이 설정되어 있습니다. 운영 환경의 DB, 메일, JWT, CLOVA Speech 설정은 Git에 저장하지 않고 `hearo-backend-secret` Kubernetes Secret으로 주입합니다.

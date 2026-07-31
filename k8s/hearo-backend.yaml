@@ -44,6 +44,8 @@ spec:
               value: redis
             - name: REDIS_PORT
               value: "6379"
+            - name: AI_SERVICE_BASE_URL
+              value: http://hearo-model:5000
             - name: JPA_DDL_AUTO
               value: update
             - name: JPA_SHOW_SQL
