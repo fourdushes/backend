@@ -85,7 +85,7 @@ class MedicalTreatmentServiceTest {
     }
 
     @Test
-    void onlyTargetInstitutionCanAcceptRequest() {
+    void onlyTargetInstitutionCanAcceptAndCreateTreatment() {
         MedicalRequest request = request();
         when(medicalRequestRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(request));
 
@@ -94,8 +94,23 @@ class MedicalTreatmentServiceTest {
                 .isInstanceOf(IllegalArgumentException.class);
         assertThat(request.getStatus()).isEqualTo(MedicalRequestStatus.REQUESTED);
 
-        assertThat(service.acceptRequest(institutionPrincipal(), 1L).getStatus())
-                .isEqualTo(MedicalRequestStatus.ACCEPTED);
+        when(archiveRepository.saveAndFlush(any(Archive.class))).thenAnswer(invocation -> {
+            Archive archive = invocation.getArgument(0);
+            ReflectionTestUtils.setField(archive, "id", 10L);
+            return archive;
+        });
+        when(chatRoomRepository.save(any(ChatRoom.class))).thenAnswer(invocation -> {
+            ChatRoom room = invocation.getArgument(0);
+            ReflectionTestUtils.setField(room, "id", 20L);
+            return room;
+        });
+
+        var response = service.acceptRequest(institutionPrincipal(), 1L);
+
+        assertThat(response.getStatus()).isEqualTo(MedicalRequestStatus.IN_PROGRESS);
+        assertThat(response.getChatRoomId()).isEqualTo(20L);
+        assertThat(response.getArchiveId()).isEqualTo(10L);
+        verify(chatMessageRepository).save(any(ChatMessage.class));
     }
 
     @Test
@@ -103,6 +118,7 @@ class MedicalTreatmentServiceTest {
         MedicalRequest request = request();
         request.accept();
         when(medicalRequestRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(request));
+        when(chatRoomRepository.findByMedicalRequestId(1L)).thenReturn(Optional.empty());
         when(archiveRepository.saveAndFlush(any(Archive.class))).thenAnswer(invocation -> {
             Archive archive = invocation.getArgument(0);
             ReflectionTestUtils.setField(archive, "id", 10L);
@@ -127,6 +143,7 @@ class MedicalTreatmentServiceTest {
         MedicalRequest rejected = request();
         rejected.reject();
         when(medicalRequestRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(rejected));
+        when(chatRoomRepository.findByMedicalRequestId(1L)).thenReturn(Optional.empty());
         assertThatThrownBy(() -> service.startTreatment(wardPrincipal(), 1L))
                 .isInstanceOf(IllegalStateException.class);
 
@@ -136,6 +153,62 @@ class MedicalTreatmentServiceTest {
         assertThatThrownBy(() -> service.startTreatment(
                 new MedicalUserPrincipal("other", UserType.WARD), 1L))
                 .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void startReturnsExistingTreatmentWithoutCreatingDuplicateRoom() {
+        ChatRoom room = room();
+        MedicalRequest request = room.getMedicalRequest();
+        when(medicalRequestRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(request));
+        when(chatRoomRepository.findByMedicalRequestId(1L)).thenReturn(Optional.of(room));
+
+        var response = service.startTreatment(wardPrincipal(), 1L);
+
+        assertThat(response.getChatRoomId()).isEqualTo(20L);
+        assertThat(response.getArchiveId()).isEqualTo(10L);
+        verify(archiveRepository, never()).saveAndFlush(any(Archive.class));
+        verify(chatRoomRepository, never()).save(any(ChatRoom.class));
+        verify(chatMessageRepository, never()).save(any(ChatMessage.class));
+    }
+
+    @Test
+    void duplicateAcceptDoesNotCreateAnotherTreatment() {
+        ChatRoom room = room();
+        MedicalRequest request = room.getMedicalRequest();
+        when(medicalRequestRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(request));
+
+        assertThatThrownBy(() -> service.acceptRequest(institutionPrincipal(), 1L))
+                .isInstanceOf(IllegalStateException.class);
+        verify(archiveRepository, never()).saveAndFlush(any(Archive.class));
+        verify(chatRoomRepository, never()).save(any(ChatRoom.class));
+        verify(chatMessageRepository, never()).save(any(ChatMessage.class));
+    }
+
+    @Test
+    void acceptFailureStopsChatRoomAndFirstMessageCreation() {
+        MedicalRequest request = request();
+        when(medicalRequestRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(request));
+        when(archiveRepository.saveAndFlush(any(Archive.class))).thenThrow(new IllegalStateException("archive save failed"));
+
+        assertThatThrownBy(() -> service.acceptRequest(institutionPrincipal(), 1L))
+                .isInstanceOf(IllegalStateException.class);
+        verify(chatRoomRepository, never()).save(any(ChatRoom.class));
+        verify(chatMessageRepository, never()).save(any(ChatMessage.class));
+    }
+
+    @Test
+    void sentRequestListContainsRoomAndArchiveIdsFromBatchLookup() {
+        ChatRoom room = room();
+        MedicalRequest request = room.getMedicalRequest();
+        when(medicalRequestRepository.findAllByWardUserIdOrderByCreatedAtDesc("ward"))
+                .thenReturn(List.of(request));
+        when(chatRoomRepository.findAllByMedicalRequestIdIn(List.of(1L))).thenReturn(List.of(room));
+
+        var response = service.getSentRequests(wardPrincipal()).getFirst();
+
+        assertThat(response.getChatRoomId()).isEqualTo(20L);
+        assertThat(response.getArchiveId()).isEqualTo(10L);
+        verify(chatRoomRepository).findAllByMedicalRequestIdIn(List.of(1L));
     }
 
     @Test

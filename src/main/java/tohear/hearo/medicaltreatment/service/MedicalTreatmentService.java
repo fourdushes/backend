@@ -2,7 +2,9 @@ package tohear.hearo.medicaltreatment.service;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -74,26 +76,26 @@ public class MedicalTreatmentService {
             throw new IllegalStateException("이미 처리 중인 진료 요청이 있습니다.");
         }
 
-        return toMedicalRequestResponse(medicalRequestRepository.save(new MedicalRequest(wardUser, institutionUser)));
+        return toMedicalRequestResponse(medicalRequestRepository.save(new MedicalRequest(wardUser, institutionUser)), null);
     }
 
     public List<MedicalRequestResponse> getSentRequests(MedicalUserPrincipal principal) {
         requireType(principal, UserType.WARD);
-        return medicalRequestRepository.findAllByWardUserIdOrderByCreatedAtDesc(principal.getUserId())
-                .stream().map(this::toMedicalRequestResponse).toList();
+        return toMedicalRequestResponses(
+                medicalRequestRepository.findAllByWardUserIdOrderByCreatedAtDesc(principal.getUserId()));
     }
 
     public List<MedicalRequestResponse> getReceivedRequests(MedicalUserPrincipal principal) {
         requireType(principal, UserType.INSTITUTIONS);
-        return medicalRequestRepository.findAllByInstitutionUserIdOrderByCreatedAtDesc(principal.getUserId())
-                .stream().map(this::toMedicalRequestResponse).toList();
+        return toMedicalRequestResponses(
+                medicalRequestRepository.findAllByInstitutionUserIdOrderByCreatedAtDesc(principal.getUserId()));
     }
 
     public MedicalRequestResponse getRequest(MedicalUserPrincipal principal, Long requestId) {
         MedicalRequest request = medicalRequestRepository.findDetailById(requestId)
                 .orElseThrow(() -> new IllegalArgumentException("진료 요청을 찾을 수 없습니다."));
         validateRequestParticipant(request, principal);
-        return toMedicalRequestResponse(request);
+        return toMedicalRequestResponse(request, chatRoomRepository.findByMedicalRequestId(requestId).orElse(null));
     }
 
     @Transactional
@@ -101,7 +103,8 @@ public class MedicalTreatmentService {
         MedicalRequest request = findRequestForUpdate(requestId);
         requireInstitutionOwner(request, principal);
         request.accept();
-        return toMedicalRequestResponse(request);
+        StartMedicalTreatmentResponse treatment = createTreatment(request);
+        return toMedicalRequestResponse(request, treatment.getChatRoomId(), treatment.getArchiveId());
     }
 
     @Transactional
@@ -109,7 +112,7 @@ public class MedicalTreatmentService {
         MedicalRequest request = findRequestForUpdate(requestId);
         requireInstitutionOwner(request, principal);
         request.reject();
-        return toMedicalRequestResponse(request);
+        return toMedicalRequestResponse(request, null);
     }
 
     @Transactional
@@ -119,10 +122,12 @@ public class MedicalTreatmentService {
         if (!request.getWardUser().getId().equals(principal.getUserId())) {
             throw new IllegalArgumentException("요청을 보낸 피보호자만 진료를 시작할 수 있습니다.");
         }
-        if (chatRoomRepository.existsByMedicalRequestId(requestId)) {
-            throw new IllegalStateException("이미 시작된 진료입니다.");
-        }
+        ChatRoom existingRoom = chatRoomRepository.findByMedicalRequestId(requestId).orElse(null);
+        if (existingRoom != null) return new StartMedicalTreatmentResponse(existingRoom.getId(), existingRoom.getArchive().getId());
+        return createTreatment(request);
+    }
 
+    private StartMedicalTreatmentResponse createTreatment(MedicalRequest request) {
         request.start();
         Archive archive = archiveRepository.saveAndFlush(new Archive(
                 "",
@@ -293,11 +298,26 @@ public class MedicalTreatmentService {
         return new InstitutionResponse(user.getId(), user.getName(), user.getEmail());
     }
 
-    private MedicalRequestResponse toMedicalRequestResponse(MedicalRequest request) {
+    private List<MedicalRequestResponse> toMedicalRequestResponses(List<MedicalRequest> requests) {
+        if (requests.isEmpty()) return List.of();
+        List<Long> requestIds = requests.stream().map(MedicalRequest::getId).toList();
+        Map<Long, ChatRoom> rooms = chatRoomRepository.findAllByMedicalRequestIdIn(requestIds).stream()
+                .collect(Collectors.toMap(room -> room.getMedicalRequest().getId(), room -> room));
+        return requests.stream().map(request -> toMedicalRequestResponse(request, rooms.get(request.getId()))).toList();
+    }
+
+    private MedicalRequestResponse toMedicalRequestResponse(MedicalRequest request, ChatRoom chatRoom) {
+        return toMedicalRequestResponse(request,
+                chatRoom == null ? null : chatRoom.getId(),
+                chatRoom == null ? null : chatRoom.getArchive().getId());
+    }
+
+    private MedicalRequestResponse toMedicalRequestResponse(MedicalRequest request, Long chatRoomId, Long archiveId) {
         return new MedicalRequestResponse(
                 request.getId(), request.getWardUser().getId(), request.getWardUser().getName(),
                 request.getInstitutionUser().getId(), request.getInstitutionUser().getName(), request.getStatus(),
-                request.getCreatedAt(), request.getRespondedAt(), request.getStartedAt(), request.getCompletedAt());
+                request.getCreatedAt(), request.getRespondedAt(), request.getStartedAt(), request.getCompletedAt(),
+                chatRoomId, archiveId);
     }
 
     private ChatMessageResponse toMessageResponse(ChatMessage message, ChatRoom room,

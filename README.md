@@ -32,8 +32,8 @@ HearO는 피보호자, 보호자, 의료기관을 연결하고 **대면 진료 �
 | JWT 인증 | 일반 사용자와 기관 관리자 역할별 Access Token·Refresh Token 발급, Bearer Token 검증, 토큰 재발급 |
 | 마이페이지 | 사용자 유형별 본인 정보 조회 및 공통 이름 변경 |
 | 보호 관계 | 사용자 검색, 연결 신청, 신청 목록 조회, 승인·거절, 메인 보호자 관리, 보호 관계 삭제 |
-| 진료 요청 | 피보호자의 의료기관 검색·진료 요청, 의료기관의 요청 조회·수락·거절 |
-| 대면 진료 기록 | 진료 기록 공간 생성, 텍스트 기록 조회·저장, 진료 완료 처리 |
+| 진료 요청 | 피보호자의 의료기관 검색·진료 요청, 의료기관의 요청 조회·거절, 수락과 동시에 진료 시작 |
+| 대면 진료 기록 | 기관 사용자 수락 시 아카이브·진료 기록 공간·첫 메시지 생성, 텍스트 기록 조회·저장, 진료 완료 처리 |
 | 음성 기록 | 진료 녹음 파일 업로드, CLOVA Speech 연동 코드 기반 음성 인식 및 녹음 기록 저장 |
 | AI 진료 요약 | 진료 종료 시 전체 대화를 외부 AI 서비스로 전달하고 주요 증상·의사 소견·기억할 내용·질문 답변·어려운 용어 생성 |
 | 진료 아카이브 | 진료 시작 시 아카이브 생성, 종료 시 전체 대화와 AI 요약 저장, 피보호자·보호자별 기록 목록 및 상세 조회 |
@@ -313,7 +313,7 @@ curl -i http://localhost:8081/api/health
 | `POST` | `/api/medical-treatment/ward/requests` | `WARD` | 대면 진료 요청 생성 |
 | `GET` | `/api/medical-treatment/ward/requests` | `WARD` | 보낸 진료 요청 목록 조회 |
 | `GET` | `/api/medical-treatment/ward/requests/{requestId}` | `WARD` | 진료 요청 상세 조회 |
-| `POST` | `/api/medical-treatment/ward/requests/{requestId}/start` | `WARD` | 수락된 대면 진료의 기록 공간 생성 |
+| `POST` | `/api/medical-treatment/ward/requests/{requestId}/start` | `WARD` | 생성된 진료 기록 공간 반환, 기존 수락 요청은 공간 생성 후 반환 |
 | `GET` | `/api/medical-treatment/ward/chat-rooms/{chatRoomId}` | `WARD` | 진료 기록 공간 조회 |
 | `GET` | `/api/medical-treatment/ward/chat-rooms/{chatRoomId}/messages` | `WARD` | 기록 메시지 목록 조회 |
 | `POST` | `/api/medical-treatment/ward/chat-rooms/{chatRoomId}/messages` | `WARD` | 텍스트 기록 전송 |
@@ -327,10 +327,12 @@ curl -i http://localhost:8081/api/health
 |---|---|---|---|
 | `GET` | `/api/medical-treatment/institution/requests` | `INSTITUTIONS` | 받은 진료 요청 목록 조회 |
 | `GET` | `/api/medical-treatment/institution/requests/{requestId}` | `INSTITUTIONS` | 진료 요청 상세 조회 |
-| `POST` | `/api/medical-treatment/institution/requests/{requestId}/accept` | `INSTITUTIONS` | 진료 요청 수락 |
+| `POST` | `/api/medical-treatment/institution/requests/{requestId}/accept` | `INSTITUTIONS` | 진료 요청 수락, 기록 공간 생성 및 진료 시작 |
 | `POST` | `/api/medical-treatment/institution/requests/{requestId}/reject` | `INSTITUTIONS` | 진료 요청 거절 |
 | `GET` | `/api/medical-treatment/institution/chat-rooms/{chatRoomId}/messages` | `INSTITUTIONS` | 진료 기록 메시지 목록 조회 |
 | `POST` | `/api/medical-treatment/institution/chat-rooms/{chatRoomId}/recordings/complete` | `INSTITUTIONS` | 대면 진료 녹음 변환 및 기록 저장 |
+
+기관 사용자가 진료 요청을 수락하면 요청 잠금과 동일한 트랜잭션 안에서 아카이브, 진료 기록 공간, 첫 시스템 메시지를 생성하고 상태를 `IN_PROGRESS`로 전환합니다. 수락 응답의 `chatRoomId`, `archiveId`를 이용해 즉시 진료 화면에 입장할 수 있으며, 요청 목록·상세 응답에도 생성된 공간의 ID가 포함됩니다. 기존 `start` API는 이미 공간이 있으면 같은 ID를 반환해 중복 생성을 방지하고, 공간이 없는 기존 `ACCEPTED` 요청에 대해서만 생성 로직을 수행합니다.
 
 모든 진료 API는 JWT 인증이 필요합니다. 녹음 완료 API의 Content-Type은 `multipart/form-data`입니다. 코드의 `ChatRoom`, `ChatMessage` 명칭은 네트워크 기반 비대면 채팅이 아니라 대면 진료 과정의 텍스트·음성 기록을 저장하는 내부 도메인 명칭으로 사용합니다.
 

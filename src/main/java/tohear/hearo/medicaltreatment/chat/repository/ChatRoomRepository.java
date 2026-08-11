@@ -1,5 +1,6 @@
 package tohear.hearo.medicaltreatment.chat.repository;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.EntityGraph;
@@ -14,6 +15,12 @@ import tohear.hearo.medicaltreatment.chat.domain.ChatRoom;
 public interface ChatRoomRepository extends JpaRepository<ChatRoom, Long> {
 
     boolean existsByMedicalRequestId(Long medicalRequestId);
+
+    @EntityGraph(attributePaths = {"medicalRequest", "archive"})
+    Optional<ChatRoom> findByMedicalRequestId(Long medicalRequestId);
+
+    @EntityGraph(attributePaths = {"medicalRequest", "archive"})
+    List<ChatRoom> findAllByMedicalRequestIdIn(List<Long> medicalRequestIds);
 
     @EntityGraph(attributePaths = {"medicalRequest", "archive", "institutionUser", "wardUser"})
     @Query("select cr from ChatRoom cr where cr.id = :id")
