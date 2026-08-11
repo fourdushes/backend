@@ -22,4 +22,6 @@ public class MedicalRequestResponse {
     private LocalDateTime respondedAt;
     private LocalDateTime startedAt;
     private LocalDateTime completedAt;
+    private Long chatRoomId;
+    private Long archiveId;
 }
