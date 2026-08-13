@@ -116,6 +116,14 @@ public class MedicalTreatmentService {
     }
 
     @Transactional
+    public MedicalRequestResponse cancelRequest(MedicalUserPrincipal principal, Long requestId) {
+        MedicalRequest request = findRequestForUpdate(requestId);
+        requireWardOwner(request, principal);
+        request.cancel();
+        return toMedicalRequestResponse(request, null);
+    }
+
+    @Transactional
     public StartMedicalTreatmentResponse startTreatment(MedicalUserPrincipal principal, Long requestId) {
         MedicalRequest request = findRequestForUpdate(requestId);
         requireType(principal, UserType.WARD);
@@ -266,6 +274,13 @@ public class MedicalTreatmentService {
         requireType(principal, UserType.INSTITUTIONS);
         if (!request.getInstitutionUser().getId().equals(principal.getUserId())) {
             throw new IllegalArgumentException("요청 대상 기관 사용자만 처리할 수 있습니다.");
+        }
+    }
+
+    private void requireWardOwner(MedicalRequest request, MedicalUserPrincipal principal) {
+        requireType(principal, UserType.WARD);
+        if (!request.getWardUser().getId().equals(principal.getUserId())) {
+            throw new IllegalArgumentException("요청을 보낸 피보호자만 취소할 수 있습니다.");
         }
     }
 

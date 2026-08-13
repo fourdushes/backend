@@ -85,6 +85,45 @@ class MedicalTreatmentServiceTest {
     }
 
     @Test
+    void wardCancelsOwnRequestedTreatment() {
+        MedicalRequest request = request();
+        when(medicalRequestRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(request));
+
+        var response = service.cancelRequest(wardPrincipal(), 1L);
+
+        assertThat(response.getStatus()).isEqualTo(MedicalRequestStatus.CANCELED);
+        assertThat(response.getChatRoomId()).isNull();
+        assertThat(response.getArchiveId()).isNull();
+        verify(archiveRepository, never()).saveAndFlush(any(Archive.class));
+        verify(chatRoomRepository, never()).save(any(ChatRoom.class));
+        verify(chatMessageRepository, never()).save(any(ChatMessage.class));
+    }
+
+    @Test
+    void onlyRequestingWardCanCancelTreatment() {
+        MedicalRequest request = request();
+        when(medicalRequestRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(request));
+
+        assertThatThrownBy(() -> service.cancelRequest(
+                new MedicalUserPrincipal("other", UserType.WARD), 1L))
+                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> service.cancelRequest(institutionPrincipal(), 1L))
+                .isInstanceOf(IllegalArgumentException.class);
+        assertThat(request.getStatus()).isEqualTo(MedicalRequestStatus.REQUESTED);
+    }
+
+    @Test
+    void acceptedRequestCannotBeCanceled() {
+        MedicalRequest request = request();
+        request.accept();
+        when(medicalRequestRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(request));
+
+        assertThatThrownBy(() -> service.cancelRequest(wardPrincipal(), 1L))
+                .isInstanceOf(IllegalStateException.class);
+        assertThat(request.getStatus()).isEqualTo(MedicalRequestStatus.ACCEPTED);
+    }
+
+    @Test
     void onlyTargetInstitutionCanAcceptAndCreateTreatment() {
         MedicalRequest request = request();
         when(medicalRequestRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(request));
