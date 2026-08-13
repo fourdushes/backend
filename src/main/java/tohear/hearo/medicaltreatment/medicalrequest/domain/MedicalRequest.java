@@ -70,6 +70,11 @@ public class MedicalRequest {
         respondedAt = LocalDateTime.now();
     }
 
+    public void cancel() {
+        requireStatus(MedicalRequestStatus.REQUESTED);
+        status = MedicalRequestStatus.CANCELED;
+    }
+
     public void start() {
         requireStatus(MedicalRequestStatus.ACCEPTED);
         status = MedicalRequestStatus.IN_PROGRESS;

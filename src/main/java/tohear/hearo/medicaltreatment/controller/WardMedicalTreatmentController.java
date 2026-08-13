@@ -67,6 +67,15 @@ public class WardMedicalTreatmentController {
                 medicalTreatmentService.getRequest(principal, requestId));
     }
 
+    // 피보호자가 기관 사용자에게 보낸 대기 중 진료 요청을 취소합니다.
+    @PostMapping("/requests/{requestId}/cancel")
+    public Result<MedicalRequestResponse> cancelRequest(
+            @CurrentMedicalUser MedicalUserPrincipal principal,
+            @PathVariable Long requestId) {
+        return new Result<>("200", "진료 요청을 취소했습니다.",
+                medicalTreatmentService.cancelRequest(principal, requestId));
+    }
+
     // 기관 사용자가 수락한 요청으로 진료와 채팅방을 시작합니다.
     @PostMapping("/requests/{requestId}/start")
     public Result<StartMedicalTreatmentResponse> startTreatment(

@@ -4,7 +4,7 @@
 
 HearO는 피보호자, 보호자, 의료기관을 연결하고 **대면 진료 현장의 대화와 진료 기록을 관리하는 백엔드 API**입니다.
 
-사용자 유형별 회원 관리와 JWT 인증을 제공하고, 기관 관리자 가입·승인과 소속 기관 사용자 관리, 보호자와 피보호자의 연결 신청·승인, 의료기관 검색과 대면 진료 요청, 진료 내용 기록, 음성 녹음 및 CLOVA Speech 기반 텍스트 변환, AI 진료 요약과 진료 기록 아카이브 조회 흐름을 구현했습니다.
+사용자 유형별 회원 관리와 JWT 인증을 제공하고, 기관 관리자 가입·승인과 소속 기관 사용자 관리, 보호자와 피보호자의 연결 신청·승인, 의료기관 검색과 대면 진료 요청·취소, 진료 내용 기록, 음성 녹음 및 CLOVA Speech 기반 텍스트 변환, AI 진료 요약과 진료 기록 아카이브 조회 흐름을 구현했습니다.
 
 본 저장소는 Java 21과 Spring Boot 기반의 단일 백엔드 애플리케이션이며, MySQL에 서비스 데이터를 저장하고 Redis에 이메일 인증 상태와 Refresh Token을 관리합니다.
 
@@ -32,7 +32,7 @@ HearO는 피보호자, 보호자, 의료기관을 연결하고 **대면 진료 �
 | JWT 인증 | 일반 사용자와 기관 관리자 역할별 Access Token·Refresh Token 발급, Bearer Token 검증, 토큰 재발급 |
 | 마이페이지 | 사용자 유형별 본인 정보 조회 및 공통 이름 변경 |
 | 보호 관계 | 사용자 검색, 연결 신청, 신청 목록 조회, 승인·거절, 메인 보호자 관리, 보호 관계 삭제 |
-| 진료 요청 | 피보호자의 의료기관 검색·진료 요청, 의료기관의 요청 조회·거절, 수락과 동시에 진료 시작 |
+| 진료 요청 | 피보호자의 의료기관 검색·진료 요청·대기 요청 취소, 의료기관의 요청 조회·거절, 수락과 동시에 진료 시작 |
 | 대면 진료 기록 | 기관 사용자 수락 시 아카이브·진료 기록 공간·첫 메시지 생성, 텍스트 기록 조회·저장, 진료 완료 처리 |
 | 음성 기록 | 진료 녹음 파일 업로드, CLOVA Speech 연동 코드 기반 음성 인식 및 녹음 기록 저장 |
 | AI 진료 요약 | 진료 종료 시 전체 대화를 외부 AI 서비스로 전달하고 주요 증상·의사 소견·기억할 내용·질문 답변·어려운 용어 생성 |
@@ -195,6 +195,8 @@ export SPRING_DATASOURCE_PASSWORD='<MYSQL_PASSWORD>'
 export JWT_SECRET='<BASE64_ENCODED_SECRET>'
 export SPRING_DATA_REDIS_HOST='localhost'
 export SPRING_DATA_REDIS_PORT='6379'
+export CLOVA_SPEECH_SECRET='<CLOVA_SPEECH_SECRET>'
+export CLOVA_SPEECH_INVOKE_URL='<CLOVA_SPEECH_INVOKE_URL>'
 ```
 
 | 환경변수 | 필수 여부 | 설명 |
@@ -206,10 +208,12 @@ export SPRING_DATA_REDIS_PORT='6379'
 | `SPRING_DATA_REDIS_HOST` | 인증 기능 사용 시 | Redis 호스트 |
 | `SPRING_DATA_REDIS_PORT` | 인증 기능 사용 시 | Redis 포트 |
 | `MAIL_PASSWORD` | 메일 발송 시 | Gmail 앱 비밀번호 |
+| `CLOVA_SPEECH_SECRET` | 녹음 변환 시 | CLOVA Speech Secret Key |
+| `CLOVA_SPEECH_INVOKE_URL` | 녹음 변환 시 | CLOVA Speech Invoke URL |
 
 Spring Boot의 외부 설정 우선순위에 따라 위 환경변수가 `application.properties` 값을 덮어씁니다.
 
-> CLOVA Speech의 `SECRET`, `INVOKE_URL`은 현재 환경변수로 연결되어 있지 않고 `ClovaSpeechClient` 내부 값이 비어 있습니다. 따라서 연동 코드 자체는 구현되어 있지만, 해당 값을 별도로 연결하기 전에는 녹음 변환 API가 정상 동작하지 않습니다. AI Summary API의 기준 주소도 현재 `AiClientConfig`에 직접 설정되어 있습니다.
+> CLOVA Speech 설정은 `CLOVA_SPEECH_SECRET`, `CLOVA_SPEECH_INVOKE_URL` 환경변수로 주입합니다. 두 값이 비어 있으면 녹음 변환 API가 정상 동작하지 않습니다. AI Summary API의 기준 주소는 현재 `AiClientConfig`에 직접 설정되어 있습니다.
 
 ### 8.4 애플리케이션 실행
 
@@ -313,11 +317,14 @@ curl -i http://localhost:8081/api/health
 | `POST` | `/api/medical-treatment/ward/requests` | `WARD` | 대면 진료 요청 생성 |
 | `GET` | `/api/medical-treatment/ward/requests` | `WARD` | 보낸 진료 요청 목록 조회 |
 | `GET` | `/api/medical-treatment/ward/requests/{requestId}` | `WARD` | 진료 요청 상세 조회 |
+| `POST` | `/api/medical-treatment/ward/requests/{requestId}/cancel` | `WARD` | 본인이 보낸 응답 대기 중 진료 요청 취소 |
 | `POST` | `/api/medical-treatment/ward/requests/{requestId}/start` | `WARD` | 생성된 진료 기록 공간 반환, 기존 수락 요청은 공간 생성 후 반환 |
 | `GET` | `/api/medical-treatment/ward/chat-rooms/{chatRoomId}` | `WARD` | 진료 기록 공간 조회 |
 | `GET` | `/api/medical-treatment/ward/chat-rooms/{chatRoomId}/messages` | `WARD` | 기록 메시지 목록 조회 |
 | `POST` | `/api/medical-treatment/ward/chat-rooms/{chatRoomId}/messages` | `WARD` | 텍스트 기록 전송 |
 | `POST` | `/api/medical-treatment/ward/chat-rooms/{chatRoomId}/complete` | `WARD` | 대면 진료 완료, AI 요약 생성 및 아카이브 저장 |
+
+피보호자는 자신이 보낸 `REQUESTED` 상태의 요청만 취소할 수 있습니다. 취소 API는 요청 행을 잠근 상태에서 소유자와 상태를 확인하고 `CANCELED`로 전환하므로, 기관 사용자의 수락과 동시에 처리되더라도 먼저 완료된 상태 변경만 성공합니다. 이미 수락되었거나 진행 중인 요청은 취소할 수 없습니다.
 
 진료 종료 API는 시스템 메시지를 제외한 대화를 시간순으로 합쳐 AI Summary API에 전달합니다. 응답과 아카이브 상세에는 `mainSymptoms`, `doctorOpinion`, `remember`, `questionAnswer`, `difficultWords`가 포함됩니다. 일부 요약 필드만 비어 있으면 해당 값을 `"없음"`으로 저장하고, 전체 요약이 비어 있거나 외부 서비스 호출이 실패하면 HTTP `502`를 반환합니다.
 
@@ -332,7 +339,7 @@ curl -i http://localhost:8081/api/health
 | `GET` | `/api/medical-treatment/institution/chat-rooms/{chatRoomId}/messages` | `INSTITUTIONS` | 진료 기록 메시지 목록 조회 |
 | `POST` | `/api/medical-treatment/institution/chat-rooms/{chatRoomId}/recordings/complete` | `INSTITUTIONS` | 대면 진료 녹음 변환 및 기록 저장 |
 
-기관 사용자가 진료 요청을 수락하면 요청 잠금과 동일한 트랜잭션 안에서 아카이브, 진료 기록 공간, 첫 시스템 메시지를 생성하고 상태를 `IN_PROGRESS`로 전환합니다. 수락 응답의 `chatRoomId`, `archiveId`를 이용해 즉시 진료 화면에 입장할 수 있으며, 요청 목록·상세 응답에도 생성된 공간의 ID가 포함됩니다. 기존 `start` API는 이미 공간이 있으면 같은 ID를 반환해 중복 생성을 방지하고, 공간이 없는 기존 `ACCEPTED` 요청에 대해서만 생성 로직을 수행합니다.
+기관 사용자가 진료 요청을 수락하면 요청 잠금과 동일한 트랜잭션 안에서 아카이브, 진료 기록 공간, 첫 시스템 메시지를 생성하고 상태를 `IN_PROGRESS`로 전환합니다. 수락 응답의 `chatRoomId`, `archiveId`를 이용해 즉시 진료 화면에 입장할 수 있으며, 요청 목록·상세 응답에도 생성된 공간의 ID가 포함됩니다. 따라서 진료방 연결 정보는 특정 브라우저의 로컬 저장소가 아닌 서버 응답에서 복구할 수 있습니다. 기존 `start` API는 이미 공간이 있으면 같은 ID를 반환해 중복 생성을 방지하고, 공간이 없는 기존 `ACCEPTED` 요청에 대해서만 생성 로직을 수행합니다.
 
 모든 진료 API는 JWT 인증이 필요합니다. 녹음 완료 API의 Content-Type은 `multipart/form-data`입니다. 코드의 `ChatRoom`, `ChatMessage` 명칭은 네트워크 기반 비대면 채팅이 아니라 대면 진료 과정의 텍스트·음성 기록을 저장하는 내부 도메인 명칭으로 사용합니다.
 
@@ -481,7 +488,16 @@ curl -X POST http://localhost:8081/api/medical-treatment/ward/requests \
   -d '{"institutionUserId":"institution01"}'
 ```
 
-### 11.6 대면 진료 텍스트 기록
+### 11.6 대면 진료 요청 취소
+
+대기 중인 진료 요청 취소:
+
+```bash
+curl -X POST http://localhost:8081/api/medical-treatment/ward/requests/1/cancel \
+  -H 'Authorization: Bearer <ACCESS_TOKEN>'
+```
+
+### 11.7 대면 진료 텍스트 기록
 
 ```bash
 curl -X POST http://localhost:8081/api/medical-treatment/ward/chat-rooms/1/messages \
@@ -490,7 +506,7 @@ curl -X POST http://localhost:8081/api/medical-treatment/ward/chat-rooms/1/messa
   -d '{"content":"대면 진료 중 기록할 내용"}'
 ```
 
-### 11.7 녹음 파일 변환
+### 11.8 녹음 파일 변환
 
 ```bash
 curl -X POST http://localhost:8081/api/medical-treatment/institution/chat-rooms/1/recordings/complete \
@@ -575,7 +591,7 @@ curl -X POST http://localhost:8081/api/medical-treatment/institution/chat-rooms/
 
 HearO는 사용자 유형별 권한과 보호 관계를 중심으로 대면 진료 요청부터 현장 대화 기록, 음성 텍스트 변환, AI 진료 요약, 완료된 진료 기록 조회까지 하나의 흐름으로 연결합니다.
 
-Strategy 형태의 사용자 서비스 분기, 커스텀 JWT 사용자 주입, QueryDSL 기반 조회, Redis TTL 이메일 인증, 외부 Speech-to-Text 연동을 통해 실제 서비스 백엔드에서 필요한 인증·영속성·외부 API 통합을 함께 다룹니다.
+Strategy 형태의 사용자 서비스 분기, 커스텀 JWT 사용자 주입, QueryDSL 기반 조회, Redis TTL 이메일 인증, 비관적 잠금을 적용한 진료 요청 상태 전이, 외부 Speech-to-Text·AI Summary 연동을 통해 실제 서비스 백엔드에서 필요한 인증·영속성·동시성·외부 API 통합을 함께 다룹니다.
 
 ---
 
