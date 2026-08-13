@@ -1,5 +1,6 @@
 package tohear.hearo.global.config;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.client.RestClient;
@@ -8,9 +9,11 @@ import org.springframework.web.client.RestClient;
 public class AiClientConfig {
 
     @Bean
-    public RestClient aiRestClient() {
+    public RestClient aiRestClient(
+            @Value("${AI_SERVICE_BASE_URL:http://127.0.0.1:5000}") String baseUrl
+    ) {
         return RestClient.builder()
-                .baseUrl("http://43.202.195.242:5000")
+                .baseUrl(baseUrl)
                 .build();
     }
 

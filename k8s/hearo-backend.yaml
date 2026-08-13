@@ -17,7 +17,7 @@ spec:
       containers:
         - name: hearo-backend
           # GitHub Actions에서 새 commit SHA 태그로 변경합니다.
-          image: 225989329853.dkr.ecr.ap-northeast-2.amazonaws.com/hearo-backend:da00b3a82bdec8b9aeade4a70bf99faaf09f9b35
+          image: 225989329853.dkr.ecr.ap-northeast-2.amazonaws.com/hearo-backend:f14e766f3f873828b4d4601dc5ad92861f0372b5
           imagePullPolicy: Always
           ports:
             - name: http
@@ -44,10 +44,14 @@ spec:
               value: redis
             - name: REDIS_PORT
               value: "6379"
+            - name: AI_SERVICE_BASE_URL
+              value: http://hearo-model:5000
             - name: JPA_DDL_AUTO
               value: update
             - name: JPA_SHOW_SQL
               value: "false"
+            - name: CORS_ALLOWED_ORIGINS
+              value: https://beta.hearo-hearo.com
             - name: AWS_REGION
               value: ap-northeast-2
             - name: AWS_S3_BUCKET
@@ -93,11 +97,10 @@ metadata:
   labels:
     app: hearo-backend
 spec:
-  type: NodePort
+  type: ClusterIP
   selector:
     app: hearo-backend
   ports:
     - name: http
       port: 8081
       targetPort: 8081
-      nodePort: 30111
