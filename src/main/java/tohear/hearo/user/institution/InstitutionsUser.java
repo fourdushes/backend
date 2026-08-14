@@ -34,7 +34,7 @@ public class InstitutionsUser {
     private Institution institution; // 기관 아이디
 
     @Enumerated(EnumType.STRING)
-    private InstitutionState institutionState; // 기관 승인 상태
+    private InstitutionUserState institutionState; // 기관 승인 상태
     private LocalDateTime sendRequestDateTime; // 기관에 가입 승인을 보낸 시간
     private LocalDateTime joinDateTime; // 회원가입한 시간
 
@@ -48,7 +48,7 @@ public class InstitutionsUser {
         this.password = password;
         this.userType = userType;
         this.institution = institution;
-        this.institutionState = InstitutionState.PENDING;
+        this.institutionState = InstitutionUserState.PENDING;
         this.sendRequestDateTime = LocalDateTime.now();
         this.joinDateTime = LocalDateTime.now();
     }
@@ -62,14 +62,14 @@ public class InstitutionsUser {
     }
 
     public void approved() {
-        this.institutionState = InstitutionState.APPROVED;
+        this.institutionState = InstitutionUserState.APPROVED;
     }
 
     public void reject() {
-        this.institutionState = InstitutionState.REJECTED;
+        this.institutionState = InstitutionUserState.REJECTED;
     }
 
     public void delete() {
-        this.institutionState = InstitutionState.DELETE;
+        this.institutionState = InstitutionUserState.DELETE;
     }
 }

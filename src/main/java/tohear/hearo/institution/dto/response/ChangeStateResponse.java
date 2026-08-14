@@ -3,7 +3,7 @@ package tohear.hearo.institution.dto.response;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import tohear.hearo.user.institution.InstitutionState;
+import tohear.hearo.user.institution.InstitutionUserState;
 
 @Data
 @NoArgsConstructor
@@ -11,6 +11,6 @@ import tohear.hearo.user.institution.InstitutionState;
 public class ChangeStateResponse {
 
     private String institutionsUserId;
-    private InstitutionState institutionState;
+    private InstitutionUserState institutionState;
 
 }

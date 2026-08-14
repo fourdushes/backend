@@ -7,6 +7,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -24,6 +25,7 @@ import tohear.hearo.institution.dto.request.InstitutionJoinRequest;
 import tohear.hearo.institution.dto.request.InstitutionLoginRequest;
 import tohear.hearo.institution.dto.request.InstitutionToChangePasswordRequest;
 import tohear.hearo.institution.dto.request.JudgeUserRequest;
+import tohear.hearo.institution.dto.request.SearchInstitutionUserRequest;
 import tohear.hearo.institution.dto.response.ChangeStateResponse;
 import tohear.hearo.institution.dto.response.InstitutionJoinResponse;
 import tohear.hearo.institution.dto.response.InstitutionLoginResponse;
@@ -44,7 +46,7 @@ public class InstitutionController {
 
 
     @GetMapping("/search")
-    public Page<InstitutionSearchResponse> search(@RequestParam(defaultValue = "") String keyword, 
+    public Page<InstitutionSearchResponse> search(@RequestParam(defaultValue = "") String keyword,
                                                   @PageableDefault(page = 0, size = 10, sort = "id", direction = Sort.Direction.ASC) Pageable pageable) {
         return institutionService.search(keyword, pageable);
     }
@@ -120,5 +122,15 @@ public class InstitutionController {
         ChangeStateResponse response = institutionService.deleteState(principal.getInstitutionId(), request);
         return new Result<>("200", "삭제 되었습니다", response);
     }
+
+    @GetMapping("/search/institution-user")
+    public Result getMethodName(@CurrentInstitution InstitutionPrincipal principal,
+                                @ModelAttribute SearchInstitutionUserRequest request,
+                                @PageableDefault(page = 0, size = 10, sort = "id", direction = Sort.Direction.ASC) Pageable pageable
+    ) {
+        JudgeUserResponse response = institutionService.searchInstitutionUser(principal.getInstitutionId(), request, pageable);
+        return new Result<>("200", "조회 성공", response);
+    }
+
 
 }

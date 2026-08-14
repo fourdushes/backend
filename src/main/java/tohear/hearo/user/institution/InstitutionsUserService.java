@@ -85,7 +85,7 @@ public class InstitutionsUserService implements UserService {
             throw new IllegalArgumentException("비밀번호가 올바르지 않습니다.");
         }
 
-        if (user.getInstitutionState() != InstitutionState.APPROVED) {
+        if (user.getInstitutionState() != InstitutionUserState.APPROVED) {
             throw new IllegalArgumentException("기관 승인이 완료되지 않았습니다.");
         }
 

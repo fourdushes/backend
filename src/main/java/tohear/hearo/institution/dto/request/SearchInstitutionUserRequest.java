@@ -1,16 +1,14 @@
 package tohear.hearo.institution.dto.request;
 
-import org.springframework.data.domain.Pageable;
-
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import tohear.hearo.user.institution.InstitutionUserState;
 
 @Data
 @NoArgsConstructor
-public class JudgeUserRequest {
+public class SearchInstitutionUserRequest {
 
-    Long institutionId;
-    InstitutionUserState state;
-    Pageable pageable;
+    private String keyword;
+    private InstitutionUserState institutionUserState;
+
 }
