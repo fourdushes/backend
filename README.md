@@ -38,7 +38,7 @@ HearO는 피보호자, 보호자, 의료기관을 연결하고 **대면 진료 �
 | 구분 | 구현 내용 |
 |---|---|
 | 사용자 관리 | 피보호자, 보호자, 기관 소속 사용자 유형별 회원가입·로그인·아이디 찾기·비밀번호 변경 |
-| 기관 관리자 | 기관 계정 가입·로그인·아이디 찾기·비밀번호 변경, 소속 사용자 상태별 페이지 조회와 승인·거절·삭제 |
+| 기관 관리자 | 기관 계정 가입·로그인·아이디 찾기·비밀번호 변경, 소속 사용자 이름·ID·상태 검색과 승인·거절·삭제 |
 | 이메일 인증 | Gmail SMTP로 6자리 인증번호 발송, Redis TTL 기반 인증번호 검증 |
 | JWT 인증 | 일반 사용자와 기관 관리자 역할별 Access Token·Refresh Token 발급, Bearer Token 검증, 토큰 재발급 |
 | 마이페이지 | 사용자 유형별 본인 정보 조회 및 공통 이름 변경 |
@@ -107,6 +107,13 @@ Spring Boot REST API :8081
 | `WARD` | 진료를 요청하고 받는 피보호자 |
 | `GUARDIAN` | 피보호자의 진료 기록을 확인하는 보호자 |
 | `INSTITUTIONS` | 기관에 소속되어 진료 요청을 처리하는 사용자 |
+
+### 4.3 기관 승인 상태
+
+| 타입 | 값 | 적용 대상 |
+|---|---|---|
+| `InstitutionApprovalState` | `PENDING`, `APPROVED`, `REJECTED` | 기관 자체의 관리자 승인 상태 |
+| `InstitutionUserState` | `PENDING`, `APPROVED`, `REJECTED`, `DELETE` | 기관에 소속된 사용자의 가입·연결 상태 |
 
 ---
 
@@ -284,11 +291,12 @@ curl -i http://localhost:8081/api/health
 | `POST` | `/api/institutions/search-pending-user` | 필요 | 소속 승인 대기 사용자 페이지 조회 |
 | `POST` | `/api/institutions/search-approved-user` | 필요 | 소속 승인 사용자 페이지 조회 |
 | `POST` | `/api/institutions/search-reject-user` | 필요 | 소속 거절 사용자 페이지 조회 |
+| `GET` | `/api/institutions/search/institution-user` | 필요 | 현재 기관 소속 사용자를 이름·ID와 상태로 페이지 검색 |
 | `POST` | `/api/institutions/user/approved` | 필요 | 소속 사용자 승인 |
 | `POST` | `/api/institutions/user/reject` | 필요 | 소속 사용자 거절 |
 | `POST` | `/api/institutions/user/delete` | 필요 | 승인된 소속 사용자를 삭제 상태로 변경 |
 
-소속 사용자 조회와 상태 변경 API에는 기관 관리자용 Access Token이 필요하며, 서버는 토큰에서 기관 ID를 가져와 다른 기관의 사용자에 대한 접근을 차단합니다. 기관 자체가 `APPROVED` 상태일 때만 로그인과 소속 사용자 관리가 가능합니다.
+소속 사용자 조회와 상태 변경 API에는 기관 관리자용 Access Token이 필요하며, 서버는 토큰에서 기관 ID를 가져와 다른 기관의 사용자에 대한 접근을 차단합니다. 기관 자체가 `InstitutionApprovalState.APPROVED` 상태일 때만 로그인과 소속 사용자 관리가 가능합니다. 사용자 검색 API는 `keyword`, `institutionUserState`, `page`, `size`를 받고 이름 또는 ID에 검색어가 포함되면서 요청한 `InstitutionUserState`와 일치하는 사용자만 반환합니다.
 
 ### 9.3 마이페이지
 
@@ -401,6 +409,7 @@ curl -i http://localhost:8081/api/health
 | 기관 아이디 찾기 | `institutionName`, `email` | 기관명과 이메일로 로그인 ID 조회 |
 | 기관 비밀번호 변경 사전 인증 | `institutionName`, `email` | 이메일 인증 상태와 기관 정보 확인 |
 | 기관 비밀번호 변경 | `institutionId`, `newPassword`, `checkNewPassword`, `tempToken` | 기관 비밀번호 재설정 |
+| 기관 사용자 검색 | `keyword`, `institutionUserState` | 현재 기관 소속 사용자의 이름·ID 검색어와 상태 |
 | 기관 사용자 상태 변경 | `institutionsUserId` | 승인·거절·삭제할 소속 사용자 ID |
 | 이름 변경 | `newName` | 로그인 사용자의 새 이름 |
 | 보호 관계 신청 | `wardUserId` | 연결할 피보호자 ID |

@@ -1,16 +1,15 @@
-package tohear.hearo.user.institution;
+package tohear.hearo.institution.domain;
 
-public enum InstitutionState {
+public enum InstitutionApprovalState {
 
     APPROVED("승인됨"), // 승인됨
     PENDING("승인 대기 중"), // 승인 대기 중
-    REJECTED("거절됨"), // 거절됨
-    DELETE("삭제됨"); // 승인된 사용자를 삭제함
+    REJECTED("거절됨"); // 거절됨
 
     private final String description;
 
 
-    InstitutionState(String description) {
+    InstitutionApprovalState(String description) {
         this.description = description;
     }
 

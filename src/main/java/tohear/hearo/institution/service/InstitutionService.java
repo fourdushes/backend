@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import tohear.hearo.global.security.JwtTokenProvider;
 import tohear.hearo.institution.domain.Institution;
+import tohear.hearo.institution.domain.InstitutionApprovalState;
 import tohear.hearo.institution.dto.request.ChangeStateRequest;
 import tohear.hearo.institution.dto.request.IdFindRequest;
 import tohear.hearo.institution.dto.request.InstitutionChangePasswordRequest;
@@ -20,6 +21,7 @@ import tohear.hearo.institution.dto.request.InstitutionJoinRequest;
 import tohear.hearo.institution.dto.request.InstitutionLoginRequest;
 import tohear.hearo.institution.dto.request.InstitutionToChangePasswordRequest;
 import tohear.hearo.institution.dto.request.JudgeUserRequest;
+import tohear.hearo.institution.dto.request.SearchInstitutionUserRequest;
 import tohear.hearo.institution.dto.response.ChangeStateResponse;
 import tohear.hearo.institution.dto.response.InstitutionJoinResponse;
 import tohear.hearo.institution.dto.response.InstitutionLoginResponse;
@@ -28,7 +30,7 @@ import tohear.hearo.institution.dto.response.JudgeUserDto;
 import tohear.hearo.institution.dto.response.JudgeUserResponse;
 import tohear.hearo.institution.repository.InstitutionRepository;
 import tohear.hearo.user.auth.dto.response.InstitutionSearchResponse;
-import tohear.hearo.user.institution.InstitutionState;
+import tohear.hearo.user.institution.InstitutionUserState;
 import tohear.hearo.user.institution.InstitutionsUser;
 import tohear.hearo.user.institution.InstitutionsUserRepository;
 
@@ -112,7 +114,7 @@ public class InstitutionService {
             throw new IllegalArgumentException("비밀번호가 올바르지 않습니다.");
         }
 
-        if (institution.getInstitutionState() != tohear.hearo.institution.domain.InstitutionState.APPROVED) {
+        if (institution.getInstitutionState() != InstitutionApprovalState.APPROVED) {
             throw new IllegalArgumentException("승인된 기관만 로그인할 수 있습니다.");
         }
 
@@ -249,7 +251,7 @@ public class InstitutionService {
         validateInstitutionUserOwner(institutionId, institutionsUser);
         institutionsUser.approved();
 
-        return new ChangeStateResponse(institutionsUser.getId(), InstitutionState.APPROVED);
+        return new ChangeStateResponse(institutionsUser.getId(), InstitutionUserState.APPROVED);
     }
 
     // 연결 거절
@@ -262,7 +264,7 @@ public class InstitutionService {
         validateInstitutionUserOwner(institutionId, institutionsUser);
         institutionsUser.reject();
 
-        return new ChangeStateResponse(institutionsUser.getId(), InstitutionState.REJECTED);
+        return new ChangeStateResponse(institutionsUser.getId(), InstitutionUserState.REJECTED);
     }
 
     // 승인된 사용자 삭제
@@ -275,12 +277,12 @@ public class InstitutionService {
         validateInstitutionUserOwner(institutionId, institutionsUser);
         institutionsUser.delete();
 
-        return new ChangeStateResponse(institutionsUser.getId(), InstitutionState.DELETE);
+        return new ChangeStateResponse(institutionsUser.getId(), InstitutionUserState.DELETE);
     }
 
     private void requireApprovedInstitution(Long institutionId) {
         Institution institution = findById(institutionId);
-        if (institution.getInstitutionState() != tohear.hearo.institution.domain.InstitutionState.APPROVED) {
+        if (institution.getInstitutionState() != InstitutionApprovalState.APPROVED) {
             throw new IllegalArgumentException("승인된 기관만 접근할 수 있습니다.");
         }
     }
@@ -289,5 +291,25 @@ public class InstitutionService {
         if (!institutionsUser.getInstitution().getId().equals(institutionId)) {
             throw new IllegalArgumentException("해당 기관의 사용자가 아닙니다.");
         }
+    }
+
+    // 기관이 기관에 속한 사용자 검색
+    public JudgeUserResponse searchInstitutionUser(Long institutionId, SearchInstitutionUserRequest request, Pageable pageable) {
+        requireApprovedInstitution(institutionId);
+        Page<JudgeUserDto> page = institutionRepository.searchInstitutionUser(
+            institutionId,
+            request.getKeyword(),
+            request.getInstitutionUserState(),
+            pageable
+        );
+
+        return new JudgeUserResponse(
+            page.getTotalElements(),
+            page.getNumber(),
+            page.getSize(),
+            page.hasNext(),
+            page.getContent()
+        );
+
     }
 }

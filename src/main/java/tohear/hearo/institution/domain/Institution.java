@@ -19,7 +19,7 @@ public class Institution {
     private String email;
     private String institutionLoginId;
     private String passward;
-    private InstitutionState institutionState;
+    private InstitutionApprovalState institutionState;
 
     public Institution() {
     }
@@ -29,17 +29,16 @@ public class Institution {
         this.email = email;
         this.institutionLoginId = institutionLoginId;
         this.passward = passward;
-        this.institutionState = InstitutionState.PENDING;
+        this.institutionState = InstitutionApprovalState.PENDING;
     }
 
     public void approve() {
-        this.institutionState = InstitutionState.APPROVED;
+        this.institutionState = InstitutionApprovalState.APPROVED;
     }
 
     public void reject() {
-        this.institutionState = InstitutionState.REJECTED;
+        this.institutionState = InstitutionApprovalState.REJECTED;
     }
 
-    
 
 }
