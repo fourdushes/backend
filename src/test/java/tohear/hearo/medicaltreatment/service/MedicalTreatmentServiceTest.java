@@ -16,6 +16,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -23,6 +24,7 @@ import tohear.hearo.ai.dto.AiRequest;
 import tohear.hearo.ai.dto.AiResponse;
 import tohear.hearo.ai.service.AiService;
 import tohear.hearo.archive.domain.Archive;
+import tohear.hearo.archive.domain.DiseaseType;
 import tohear.hearo.archive.repository.ArchiveRepository;
 import tohear.hearo.institution.domain.Institution;
 import tohear.hearo.medicaltreatment.chat.domain.ChatMessage;
@@ -149,6 +151,12 @@ class MedicalTreatmentServiceTest {
         assertThat(response.getStatus()).isEqualTo(MedicalRequestStatus.IN_PROGRESS);
         assertThat(response.getChatRoomId()).isEqualTo(20L);
         assertThat(response.getArchiveId()).isEqualTo(10L);
+        var archiveCaptor = org.mockito.ArgumentCaptor.forClass(Archive.class);
+        verify(archiveRepository).saveAndFlush(archiveCaptor.capture());
+        Archive createdArchive = archiveCaptor.getValue();
+        assertThat(createdArchive.getArchiveDisease()).isNotNull();
+        assertThat(createdArchive.getArchiveDisease().getArchive()).isSameAs(createdArchive);
+        assertThat(createdArchive.getArchiveDisease().getDiseaseType()).isNull();
         verify(chatMessageRepository).save(any(ChatMessage.class));
     }
 
@@ -326,7 +334,8 @@ class MedicalTreatmentServiceTest {
                         "인후염이 의심됩니다.",
                         "충분한 수분을 섭취하세요.",
                         "고열이 나면 다시 방문하세요.",
-                        "인후염: 목구멍에 생긴 염증"));
+                        "인후염: 목구멍에 생긴 염증",
+                        "COLD"));
         AiResponse response = service.completeTreatment(wardPrincipal(), 20L);
 
         assertThat(room.getArchive().getAllChatText()).isEqualTo(
@@ -340,6 +349,71 @@ class MedicalTreatmentServiceTest {
         assertThat(room.getArchive().getDifficultWords()).isEqualTo("인후염: 목구멍에 생긴 염증");
         assertThat(room.getStatus()).isEqualTo(ChatRoomStatus.COMPLETED);
         assertThat(room.getMedicalRequest().getStatus()).isEqualTo(MedicalRequestStatus.COMPLETED);
+        assertThat(room.getArchive().getArchiveDisease().getDiseaseType()).isEqualTo(DiseaseType.COLD);
+        assertThat(room.getArchive().getArchiveDisease().getDiseaseWord()).isEqualTo("COLD");
+
+        assertThatThrownBy(() -> service.completeTreatment(wardPrincipal(), 20L))
+                .isInstanceOf(IllegalStateException.class);
+        verify(aiService, times(1)).getSummary(any(AiRequest.class));
+    }
+
+    @Test
+    void missingDiseaseCountsAsOtherWithoutPreventingCompletion() {
+        ChatRoom room = room();
+        when(chatRoomRepository.findByIdForUpdate(20L)).thenReturn(Optional.of(room));
+        when(chatMessageRepository.findAllByChatRoomIdOrderByCreatedAtAscIdAsc(20L)).thenReturn(List.of());
+        AiResponse summary = new AiResponse();
+        summary.setMainSymptoms("목 통증");
+        when(aiService.getSummary(any(AiRequest.class))).thenReturn(summary);
+
+        service.completeTreatment(wardPrincipal(), 20L);
+
+        assertThat(room.getMedicalRequest().getStatus()).isEqualTo(MedicalRequestStatus.COMPLETED);
+        assertThat(room.getArchive().getArchiveDisease().getDiseaseType()).isEqualTo(DiseaseType.OTHER);
+    }
+
+    @Test
+    void unknownDiseaseKeepsOriginalWordAndUsesOther() {
+        ChatRoom room = room();
+        when(chatRoomRepository.findByIdForUpdate(20L)).thenReturn(Optional.of(room));
+        when(chatMessageRepository.findAllByChatRoomIdOrderByCreatedAtAscIdAsc(20L)).thenReturn(List.of());
+        AiResponse summary = new AiResponse();
+        summary.setDisease("장염");
+        when(aiService.getSummary(any(AiRequest.class))).thenReturn(summary);
+
+        service.completeTreatment(wardPrincipal(), 20L);
+
+        assertThat(room.getArchive().getArchiveDisease().getDiseaseType()).isEqualTo(DiseaseType.OTHER);
+        assertThat(room.getArchive().getArchiveDisease().getDiseaseWord()).isEqualTo("장염");
+    }
+
+    @Test
+    void aiFailureDoesNotCompleteTreatmentOrClassifyDisease() {
+        ChatRoom room = room();
+        when(chatRoomRepository.findByIdForUpdate(20L)).thenReturn(Optional.of(room));
+        when(chatMessageRepository.findAllByChatRoomIdOrderByCreatedAtAscIdAsc(20L)).thenReturn(List.of());
+        when(aiService.getSummary(any(AiRequest.class))).thenThrow(
+                new tohear.hearo.global.exception.AiSummaryException("AI 연결 실패"));
+
+        assertThatThrownBy(() -> service.completeTreatment(wardPrincipal(), 20L))
+                .isInstanceOf(tohear.hearo.global.exception.AiSummaryException.class);
+
+        assertThat(room.getStatus()).isEqualTo(ChatRoomStatus.IN_PROGRESS);
+        assertThat(room.getMedicalRequest().getStatus()).isEqualTo(MedicalRequestStatus.IN_PROGRESS);
+        assertThat(room.getArchive().getArchiveDisease().getDiseaseType()).isNull();
+    }
+
+    @Test
+    void differentWardCannotCompleteOrClassifyTreatment() {
+        ChatRoom room = room();
+        when(chatRoomRepository.findByIdForUpdate(20L)).thenReturn(Optional.of(room));
+
+        assertThatThrownBy(() -> service.completeTreatment(
+                new MedicalUserPrincipal("other", UserType.WARD), 20L))
+                .isInstanceOf(IllegalArgumentException.class);
+
+        verify(aiService, never()).getSummary(any(AiRequest.class));
+        assertThat(room.getArchive().getArchiveDisease().getDiseaseType()).isNull();
     }
 
     @Test

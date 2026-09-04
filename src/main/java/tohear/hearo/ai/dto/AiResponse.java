@@ -18,4 +18,7 @@ public class AiResponse {
     private String questionAnswer;
     private String difficultWords;
 
+    // AI 서버 응답 예: "disease": "COLD" 또는 "감기". 분류 시 누락/미등록 값은 OTHER로 처리한다.
+    private String disease;
+
 }

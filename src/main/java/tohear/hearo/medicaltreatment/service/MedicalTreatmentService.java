@@ -240,6 +240,7 @@ public class MedicalTreatmentService {
             response.getRemember(),
             response.getQuestionAnswer(),
             response.getDifficultWords());
+        chatRoom.getArchive().updateDisease(response.getDisease());
         chatRoom.getMedicalRequest().complete();
         chatRoom.complete();
         return response;
