@@ -25,6 +25,7 @@ public class GuardUser {
     @Enumerated(EnumType.STRING)
     private UserType userType; // 사용자 유형 (보호자)
     private LocalDateTime joinDateTime; // 회원가입한 시간
+    private LocalDateTime lastLoginDateTime; // 마지막 로그인한 시간
     
 
     public GuardUser() {
@@ -37,6 +38,7 @@ public class GuardUser {
         this.password = password;
         this.userType = userType;
         this.joinDateTime = LocalDateTime.now();
+        this.lastLoginDateTime = LocalDateTime.now();
     }
 
     public void changePassword(String newPassword) {
@@ -45,5 +47,9 @@ public class GuardUser {
 
     public void changeName(String newName) {
         this.name = newName;
+    }
+
+    public void updateLastLoginDateTime() {
+        this.lastLoginDateTime = LocalDateTime.now();
     }
 }

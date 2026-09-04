@@ -2,14 +2,17 @@ package tohear.hearo.user.ward;
 
 import java.time.LocalDateTime;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToOne;
 
 import lombok.Getter;
 import tohear.hearo.user.auth.domain.UserType;
+import tohear.hearo.user.auth.domain.WardUserDisease;
 
 @Entity
 @Getter
@@ -25,6 +28,10 @@ public class WardUser {
     @Enumerated(EnumType.STRING)
     private UserType userType; // 사용자 유형 (피보호자)
     private LocalDateTime joinDateTime; // 회원가입한 시간
+    private LocalDateTime lastLoginDateTime; // 마지막 로그인한 시간
+
+    @OneToOne(mappedBy = "wardUser", cascade = CascadeType.ALL)
+    private WardUserDisease wardUserDisease; // 피보호자 질병 정보
 
     public WardUser() {
     }
@@ -36,6 +43,9 @@ public class WardUser {
         this.password = password;
         this.userType = userType;
         this.joinDateTime = LocalDateTime.now();
+        this.lastLoginDateTime = LocalDateTime.now();
+        
+        this.wardUserDisease = new WardUserDisease(this);
     }
 
     public void changePassword(String newPassword) {
@@ -44,5 +54,9 @@ public class WardUser {
 
     public void changeName(String newName) {
         this.name = newName;
+    }
+
+    public void updateLastLoginDateTime() {
+        this.lastLoginDateTime = LocalDateTime.now();
     }
 }

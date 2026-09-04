@@ -37,6 +37,7 @@ public class InstitutionsUser {
     private InstitutionUserState institutionState; // 기관 승인 상태
     private LocalDateTime sendRequestDateTime; // 기관에 가입 승인을 보낸 시간
     private LocalDateTime joinDateTime; // 회원가입한 시간
+    private LocalDateTime lastLoginDateTime; // 마지막 로그인한 시간
 
     public InstitutionsUser() {
     }
@@ -51,6 +52,7 @@ public class InstitutionsUser {
         this.institutionState = InstitutionUserState.PENDING;
         this.sendRequestDateTime = LocalDateTime.now();
         this.joinDateTime = LocalDateTime.now();
+        this.lastLoginDateTime = LocalDateTime.now();
     }
 
     public void changePassword(String newPassword) {
@@ -71,5 +73,9 @@ public class InstitutionsUser {
 
     public void delete() {
         this.institutionState = InstitutionUserState.DELETE;
+    }
+    
+    public void updateLastLoginDateTime() {
+        this.lastLoginDateTime = LocalDateTime.now();
     }
 }
