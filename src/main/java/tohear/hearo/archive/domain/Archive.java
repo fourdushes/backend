@@ -3,6 +3,7 @@ package tohear.hearo.archive.domain;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -11,6 +12,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToOne;
 
 import lombok.Getter;
 import tohear.hearo.user.ward.WardUser;
@@ -49,6 +51,9 @@ public class Archive {
     @ManyToOne(fetch = FetchType.LAZY)
     private WardUser wardUser;
 
+    @OneToOne(mappedBy = "archive", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    private ArchiveDisease archiveDisease;
+
     public Archive() {
     }
 
@@ -60,6 +65,15 @@ public class Archive {
         this.archiveDate = createTime;
         this.text = text;
         this.wardUser = wardUser;
+        this.archiveDisease = new ArchiveDisease(this);
+    }
+
+    public void updateDisease(String diseaseWord) {
+        // 변경 전에 만들어진 아카이브에는 질병 기록이 없을 수 있다.
+        if (archiveDisease == null) {
+            archiveDisease = new ArchiveDisease(this);
+        }
+        archiveDisease.updateFromAiWord(diseaseWord);
     }
 
     public void updateText(String text) {

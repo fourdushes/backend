@@ -74,6 +74,8 @@ public class GuardUserService implements UserService {
         String accessToken = tokenProvider.createAccessToken(user.getId(), userType);
         String refreshToken = tokenProvider.createRefreshToken(user.getId(), userType);
 
+        user.updateLastLoginDateTime();
+
         redisTemplate.opsForValue().set(
             "refresh-token:user:" + user.getId(),
             refreshToken,

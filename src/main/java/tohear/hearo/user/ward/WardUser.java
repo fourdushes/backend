@@ -25,6 +25,7 @@ public class WardUser {
     @Enumerated(EnumType.STRING)
     private UserType userType; // 사용자 유형 (피보호자)
     private LocalDateTime joinDateTime; // 회원가입한 시간
+    private LocalDateTime lastLoginDateTime; // 마지막 로그인한 시간
 
     public WardUser() {
     }
@@ -36,6 +37,7 @@ public class WardUser {
         this.password = password;
         this.userType = userType;
         this.joinDateTime = LocalDateTime.now();
+        this.lastLoginDateTime = LocalDateTime.now();
     }
 
     public void changePassword(String newPassword) {
@@ -44,5 +46,9 @@ public class WardUser {
 
     public void changeName(String newName) {
         this.name = newName;
+    }
+
+    public void updateLastLoginDateTime() {
+        this.lastLoginDateTime = LocalDateTime.now();
     }
 }
