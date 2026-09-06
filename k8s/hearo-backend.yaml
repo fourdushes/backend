@@ -17,7 +17,7 @@ spec:
       containers:
         - name: hearo-backend
           # GitHub Actions에서 새 commit SHA 태그로 변경합니다.
-          image: 225989329853.dkr.ecr.ap-northeast-2.amazonaws.com/hearo-backend:b017f7aed87ca69618c29f7fbee20f080df27f23
+          image: 225989329853.dkr.ecr.ap-northeast-2.amazonaws.com/hearo-backend:5571092cf4a53399be294e6bd09b17b400641c3c
           imagePullPolicy: Always
           ports:
             - name: http
