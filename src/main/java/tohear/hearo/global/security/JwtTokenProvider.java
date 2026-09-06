@@ -26,6 +26,12 @@ public class JwtTokenProvider {
     @Value("${jwt.refresh-token-validity-in-milliseconds}")
     private long refreshTokenValidityInMilliseconds;
 
+    @Value("${jwt.admin-validity-in-milliseconds:7200000}")
+    private long adminAccessTokenValidityInMilliseconds;
+
+    @Value("${jwt.admin-refresh-token-validity-in-milliseconds:43200000}")
+    private long adminRefreshTokenValidityInMilliseconds;
+
     private Key getSigningKey() {
         byte[] keyBytes = secretKey.getBytes(StandardCharsets.UTF_8);
         return Keys.hmacShaKeyFor(keyBytes);
@@ -72,6 +78,27 @@ public class JwtTokenProvider {
                 refreshTokenValidityInMilliseconds
         );
     }
+
+    // 관리자용 오버로딩
+    public String createAccessToken(String adminId) {
+        return createToken(
+                String.valueOf(adminId),
+                AccountRole.ADMIN,
+                null,
+                "ACCESS",
+                adminAccessTokenValidityInMilliseconds
+        );
+    }
+
+    public String createRefreshToken(String adminId) {
+        return createToken(
+                String.valueOf(adminId),
+                AccountRole.ADMIN,
+                null,
+                "REFRESH",
+                adminRefreshTokenValidityInMilliseconds
+        );
+    }
     public String getUserId(String token) {
         return getClaims(token).getSubject();
     }
@@ -110,6 +137,10 @@ public class JwtTokenProvider {
 
     public long getRefreshTokenValidityInMilliseconds() {
         return refreshTokenValidityInMilliseconds;
+    }
+
+    public long getAdminRefreshTokenValidityInMilliseconds() {
+        return adminRefreshTokenValidityInMilliseconds;
     }
 
     /**

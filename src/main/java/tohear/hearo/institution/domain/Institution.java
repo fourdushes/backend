@@ -1,7 +1,11 @@
 package tohear.hearo.institution.domain;
 
+import java.time.LocalDateTime;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -20,6 +24,11 @@ public class Institution {
     private String institutionLoginId;
     private String passward;
     private InstitutionApprovalState institutionState;
+    private LocalDateTime requestDate;
+    private LocalDateTime approvalDate;
+
+    @Enumerated(EnumType.STRING)
+    private InstitutionRegion region;
 
     public Institution() {
     }
@@ -30,6 +39,8 @@ public class Institution {
         this.institutionLoginId = institutionLoginId;
         this.passward = passward;
         this.institutionState = InstitutionApprovalState.PENDING;
+        this.requestDate = LocalDateTime.now();
+        this.approvalDate = LocalDateTime.now();
     }
 
     public void approve() {
@@ -39,6 +50,7 @@ public class Institution {
     public void reject() {
         this.institutionState = InstitutionApprovalState.REJECTED;
     }
-
-
+    public void setApprovalDate() {
+        this.approvalDate = LocalDateTime.now();
+    }
 }

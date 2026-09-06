@@ -39,6 +39,7 @@ HearO는 피보호자, 보호자, 의료기관을 연결하고 **대면 진료 �
 |---|---|
 | 사용자 관리 | 피보호자, 보호자, 기관 소속 사용자 유형별 회원가입·로그인·아이디 찾기·비밀번호 변경 |
 | 서비스 현황 분석 기반 | 아카이브별 질병 분류·AI 원문 저장 및 세 사용자 유형의 마지막 로그인 시각 관리 |
+| 기관 정보 관리 | 기관의 지역 분류와 가입 요청·승인 처리 시각 저장 |
 | 기관 관리자 | 기관 계정 가입·로그인·아이디 찾기·비밀번호 변경, 소속 사용자 이름·ID·상태 검색과 승인·거절·삭제 |
 | 이메일 인증 | Gmail SMTP로 6자리 인증번호 발송, Redis TTL 기반 인증번호 검증 |
 | JWT 인증 | 일반 사용자와 기관 관리자 역할별 Access Token·Refresh Token 발급, Bearer Token 검증, 토큰 재발급 |
@@ -100,6 +101,7 @@ Spring Boot REST API :8081
 |---|---|
 | `USER` | 피보호자·보호자·기관 소속 사용자 계정 |
 | `INSTITUTION` | 기관 자체를 관리하는 기관 관리자 계정 |
+| `ADMIN` | 전체 서비스를 관리하는 관리자 계정 |
 
 ### 4.2 일반 사용자 유형
 
@@ -116,7 +118,12 @@ Spring Boot REST API :8081
 | `InstitutionApprovalState` | `PENDING`, `APPROVED`, `REJECTED` | 기관 자체의 관리자 승인 상태 |
 | `InstitutionUserState` | `PENDING`, `APPROVED`, `REJECTED`, `DELETE` | 기관에 소속된 사용자의 가입·연결 상태 |
 
-### 4.4 질병 정보 및 마지막 로그인 시각
+### 4.4 기관 지역 및 처리 시각
+
+- `InstitutionRegion`은 서울·부산·대구·인천·광주·대전·울산·세종·경기·강원·충북·충남·전북·전남·경북·경남·제주로 기관 지역을 분류합니다.
+- `Institution`은 가입 요청 시각을 저장하고, 승인·거절 시 처리 시각을 갱신할 수 있도록 `LocalDateTime` 필드를 제공합니다. 현재 처리 시각 필드는 가입 시에도 초기화됩니다.
+
+### 4.5 질병 정보 및 마지막 로그인 시각
 
 - `ArchiveDisease`는 아카이브(`Archive`)와 일대일로 연결됩니다. 진료 시작 시 아카이브 생성자에서 함께 생성하고, `CascadeType.ALL`로 저장을 전파합니다. 회원가입 시에는 질병 기록을 생성하지 않습니다.
 - 진료 완료 시 AI 응답의 `disease`를 enum 분류와 원문으로 저장합니다. 영문 enum 이름과 등록된 한글 label을 인식하며, 누락되거나 등록되지 않은 값은 `OTHER`로 처리합니다. 기간별 집계 API는 별도 구현 대상입니다.
@@ -445,13 +452,14 @@ curl -i http://localhost:8081/api/health
 Authorization: Bearer <ACCESS_TOKEN>
 ```
 
-Access Token 기본 유효기간은 2일, Refresh Token 기본 유효기간은 14일입니다.
+일반 사용자와 기관 계정의 Access Token 기본 유효기간은 2일, Refresh Token 기본 유효기간은 14일입니다. 전체 서비스 관리자의 기본 유효기간은 Access Token 2시간, Refresh Token 12시간이며 운영 설정으로 변경할 수 있습니다.
 
-JWT의 `role` 클레임은 `USER` 또는 `INSTITUTION`입니다. `USER` 토큰에는 `userType`이 추가되며, `INSTITUTION` 토큰의 subject에는 기관 ID가 저장됩니다. Refresh Token은 충돌을 피하기 위해 Redis에 역할별 키로 저장됩니다.
+JWT의 `role` 클레임은 `USER`, `INSTITUTION`, `ADMIN`입니다. `USER` 토큰에는 `userType`이 추가되며, 나머지 역할의 subject에는 각 계정 ID가 저장됩니다. Refresh Token은 충돌을 피하기 위해 Redis에 역할별 키로 저장합니다.
 
 ```text
 refresh-token:user:{userId}
 refresh-token:institution:{institutionId}
+refresh-token:admin:{adminId}
 ```
 
 ### 10.2 공통 응답 형식
@@ -579,6 +587,7 @@ curl -X POST http://localhost:8081/api/medical-treatment/institution/chat-rooms/
 - 인증 성공 상태는 `mail-verified:<email>` 키로 10분간 유지됩니다.
 - 일반 사용자 Refresh Token은 `refresh-token:user:<userId>` 키로 저장됩니다.
 - 기관 관리자 Refresh Token은 `refresh-token:institution:<institutionId>` 키로 저장됩니다.
+- 전체 서비스 관리자 Refresh Token은 `refresh-token:admin:<adminId>` 키로 저장됩니다.
 - 일반 사용자 회원가입 성공 시 사용한 `mail-verified:<email>` 키는 즉시 삭제됩니다.
 
 ### JWT 인증 실패
