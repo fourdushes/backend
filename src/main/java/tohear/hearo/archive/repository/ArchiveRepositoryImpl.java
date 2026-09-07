@@ -25,7 +25,7 @@ public class ArchiveRepositoryImpl implements ArchiveRepositoryCustom {
             .selectFrom(QArchive.archive)
             .join(QArchive.archive.wardUser, QWardUser.wardUser)
             .where(QWardUser.wardUser.id.eq(userId))
-            .orderBy(QArchive.archive.id.asc())
+            .orderBy(QArchive.archive.archiveDate.desc())
             .offset(pageable.getOffset())
             .limit(pageable.getPageSize())
             .fetch();
