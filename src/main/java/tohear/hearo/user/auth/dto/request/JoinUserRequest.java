@@ -1,9 +1,14 @@
 package tohear.hearo.user.auth.dto.request;
 
+import java.time.LocalDate;
+
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Past;
 import jakarta.validation.constraints.Size;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -23,6 +28,11 @@ public class JoinUserRequest {
     @NotBlank(message = "이메일은 필수입니다.")
     @Email(message = "올바른 이메일 형식이 아닙니다.")
     private String email;
+
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    @NotNull(message = "생년월일은 필수입니다.")
+    @Past(message = "생년월일은 과거 날짜여야 합니다.")
+    private LocalDate birthDate; // 생년월일
 
     @NotBlank(message = "비밀번호는 필수입니다.")
     private String password;

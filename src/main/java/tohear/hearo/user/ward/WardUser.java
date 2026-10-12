@@ -1,5 +1,6 @@
 package tohear.hearo.user.ward;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import jakarta.persistence.Column;
@@ -22,6 +23,9 @@ public class WardUser {
     private String email;
     private String password;
 
+    @Column(nullable = false)
+    private LocalDate birthDate; // 생년월일
+
     @Enumerated(EnumType.STRING)
     private UserType userType; // 사용자 유형 (피보호자)
     private LocalDateTime joinDateTime; // 회원가입한 시간
@@ -30,11 +34,12 @@ public class WardUser {
     public WardUser() {
     }
 
-    public WardUser(String id, String name, String email, String password, UserType userType) {
+    public WardUser(String id, String name, String email, String password, LocalDate birthDate, UserType userType) {
         this.id = id;
         this.name = name;
         this.email = email;
         this.password = password;
+        this.birthDate = birthDate;
         this.userType = userType;
         this.joinDateTime = LocalDateTime.now();
         this.lastLoginDateTime = LocalDateTime.now();

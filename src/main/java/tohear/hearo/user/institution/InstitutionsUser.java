@@ -1,5 +1,6 @@
 package tohear.hearo.user.institution;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import jakarta.persistence.Column;
@@ -25,6 +26,7 @@ public class InstitutionsUser {
     private String name; // 기관 사용자 이름
     private String email;
     private String password;
+    private LocalDate birthDate; // 생년월일
 
     @Enumerated(EnumType.STRING)
     private UserType userType; // 사용자 유형 (기관 사용자)
@@ -42,11 +44,12 @@ public class InstitutionsUser {
     public InstitutionsUser() {
     }
 
-    public InstitutionsUser(String id, String name, String email, String password, UserType userType, Institution institution) {
+    public InstitutionsUser(String id, String name, String email, String password, LocalDate birthDate, UserType userType, Institution institution) {
         this.id = id;
         this.name = name;
         this.email = email;
         this.password = password;
+        this.birthDate = birthDate;
         this.userType = userType;
         this.institution = institution;
         this.institutionState = InstitutionUserState.PENDING;
