@@ -48,7 +48,7 @@ public class GuardUserService implements UserService {
 
         String encodedPassword = passwordEncoder.encode(request.getPassword());
 
-        GuardUser user = new GuardUser(request.getId(), request.getName(), request.getEmail(), encodedPassword, request.getUserType());
+        GuardUser user = new GuardUser(request.getId(), request.getName(), request.getEmail(), encodedPassword, request.getBirthDate(), request.getUserType());
         userRepository.save(user);
         return user.getId();
     }

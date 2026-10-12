@@ -46,7 +46,7 @@ public class WardUserService implements UserService {
         commonUserService.checkPassword(request.getPassword(), request.getCheckPassword());
 
         String encodedPassword = passwordEncoder.encode(request.getPassword());
-        WardUser user = new WardUser(request.getId(), request.getName(), request.getEmail(), encodedPassword, request.getUserType());
+        WardUser user = new WardUser(request.getId(), request.getName(), request.getEmail(), encodedPassword, request.getBirthDate(), request.getUserType());
         userRepository.save(user);
         return user.getId();
     }

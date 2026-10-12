@@ -61,6 +61,7 @@ public class InstitutionsUserService implements UserService {
             request.getName(),
             request.getEmail(),
             encodedPassword,
+            request.getBirthDate(),
             request.getUserType(),
             institution
         );

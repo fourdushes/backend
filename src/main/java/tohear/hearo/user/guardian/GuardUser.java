@@ -1,5 +1,6 @@
 package tohear.hearo.user.guardian;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import jakarta.persistence.Column;
@@ -21,6 +22,8 @@ public class GuardUser {
     private String name; // 보호자 이름
     private String email;
     private String password;
+    @Column(nullable = false)
+    private LocalDate birthDate; // 생년월일
     
     @Enumerated(EnumType.STRING)
     private UserType userType; // 사용자 유형 (보호자)
@@ -31,11 +34,12 @@ public class GuardUser {
     public GuardUser() {
     }
 
-    public GuardUser(String id, String name, String email, String password, UserType userType) {
+    public GuardUser(String id, String name, String email, String password, LocalDate birthDate, UserType userType) {
         this.id = id;
         this.name = name;
         this.email = email;
         this.password = password;
+        this.birthDate = birthDate;
         this.userType = userType;
         this.joinDateTime = LocalDateTime.now();
         this.lastLoginDateTime = LocalDateTime.now();
