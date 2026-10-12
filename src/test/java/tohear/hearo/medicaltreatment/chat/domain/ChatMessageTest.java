@@ -1,5 +1,7 @@
 package tohear.hearo.medicaltreatment.chat.domain;
 
+import java.time.LocalDate;
+
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -35,9 +37,9 @@ class ChatMessageTest {
     }
 
     private ChatRoom room() {
-        WardUser ward = new WardUser("ward", "환자", "ward@test.com", "pw", UserType.WARD);
+        WardUser ward = new WardUser("ward", "환자", "ward@test.com", "pw", LocalDate.of(1990, 1, 1), UserType.WARD);
         InstitutionsUser doctor = new InstitutionsUser(
-                "doctor", "의사", "doctor@test.com", "pw", UserType.INSTITUTIONS,
+                "doctor", "의사", "doctor@test.com", "pw", LocalDate.of(1990, 1, 1), UserType.INSTITUTIONS,
                 new Institution("서울병원", "admin@seoul-hospital.test", "seoul-hospital", "pw"));
         MedicalRequest request = new MedicalRequest(ward, doctor);
         request.accept();

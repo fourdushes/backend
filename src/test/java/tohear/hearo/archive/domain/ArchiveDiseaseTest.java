@@ -1,5 +1,7 @@
 package tohear.hearo.archive.domain;
 
+import java.time.LocalDate;
+
 import org.junit.jupiter.api.Test;
 
 import tohear.hearo.user.auth.domain.UserType;
@@ -11,7 +13,7 @@ class ArchiveDiseaseTest {
 
     @Test
     void archiveCreatesAnUnclassifiedDiseaseRecordWithBothSidesConnected() {
-        WardUser ward = new WardUser("ward", "환자", "ward@test.com", "pw", UserType.WARD);
+        WardUser ward = new WardUser("ward", "환자", "ward@test.com", "pw", LocalDate.of(1990, 1, 1), UserType.WARD);
         Archive archive = new Archive("", ward);
 
         assertThat(archive.getArchiveDisease()).isNotNull();
@@ -23,7 +25,7 @@ class ArchiveDiseaseTest {
     @Test
     void classificationUpdatesTheExistingRecordInsteadOfCreatingAnother() {
         Archive archive = new Archive("",
-                new WardUser("ward", "환자", "ward@test.com", "pw", UserType.WARD));
+                new WardUser("ward", "환자", "ward@test.com", "pw", LocalDate.of(1990, 1, 1), UserType.WARD));
         ArchiveDisease disease = archive.getArchiveDisease();
 
         archive.updateDisease(" COLD ");

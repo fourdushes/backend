@@ -1,5 +1,6 @@
 package tohear.hearo.archive.domain;
 
+import java.time.LocalDate;
 import java.util.UUID;
 import java.util.function.Function;
 
@@ -157,7 +158,7 @@ class ArchiveDiseasePersistenceTest {
 
     private Long persistArchive(boolean legacy) {
         return inTransaction(session -> {
-            WardUser ward = new WardUser(UUID.randomUUID().toString(), "환자", "ward@test.com", "pw", UserType.WARD);
+            WardUser ward = new WardUser(UUID.randomUUID().toString(), "환자", "ward@test.com", "pw", LocalDate.of(1990, 1, 1), UserType.WARD);
             session.persist(ward);
             Archive archive = new Archive("", ward);
             if (legacy) {

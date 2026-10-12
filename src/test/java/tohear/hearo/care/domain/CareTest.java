@@ -1,5 +1,7 @@
 package tohear.hearo.care.domain;
 
+import java.time.LocalDate;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
@@ -12,8 +14,8 @@ class CareTest {
 
     @Test
     void newCareStartsPendingAndCanBeApprovedAndRejected() {
-        WardUser ward = new WardUser("ward", "피보호자", "ward@test.com", "pw", UserType.WARD);
-        GuardUser guard = new GuardUser("guard", "보호자", "guard@test.com", "pw", UserType.GUARDIAN);
+        WardUser ward = new WardUser("ward", "피보호자", "ward@test.com", "pw", LocalDate.of(1990, 1, 1), UserType.WARD);
+        GuardUser guard = new GuardUser("guard", "보호자", "guard@test.com", "pw", LocalDate.of(1990, 1, 1), UserType.GUARDIAN);
 
         Care care = new Care(ward, guard);
 

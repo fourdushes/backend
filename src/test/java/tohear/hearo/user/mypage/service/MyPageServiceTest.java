@@ -1,5 +1,7 @@
 package tohear.hearo.user.mypage.service;
 
+import java.time.LocalDate;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -46,7 +48,7 @@ class MyPageServiceTest {
     @Test
     void wardCanReadOwnMyPage() {
         WardUser ward = new WardUser(
-            "ward", "피보호자", "ward@test.com", "pw", UserType.WARD);
+            "ward", "피보호자", "ward@test.com", "pw", LocalDate.of(1990, 1, 1), UserType.WARD);
         when(wardUserService.findById("ward")).thenReturn(ward);
 
         var response = service.wardMyPage(
@@ -61,7 +63,7 @@ class MyPageServiceTest {
     @Test
     void guardianCanReadOwnMyPage() {
         GuardUser guardian = new GuardUser(
-            "guard", "보호자", "guard@test.com", "pw", UserType.GUARDIAN);
+            "guard", "보호자", "guard@test.com", "pw", LocalDate.of(1990, 1, 1), UserType.GUARDIAN);
         when(guardUserService.findById("guard")).thenReturn(guardian);
 
         var response = service.guardMyPage(
@@ -78,7 +80,7 @@ class MyPageServiceTest {
                 "서울병원", "admin@seoul-hospital.test", "seoul-hospital", "pw");
         ReflectionTestUtils.setField(organization, "id", 10L);
         InstitutionsUser institutionUser = new InstitutionsUser(
-            "institution", "기관", "institution@test.com", "pw",
+            "institution", "기관", "institution@test.com", "pw", LocalDate.of(1990, 1, 1),
             UserType.INSTITUTIONS, organization);
         when(institutionsUserService.findById("institution")).thenReturn(institutionUser);
 
@@ -94,13 +96,13 @@ class MyPageServiceTest {
     @Test
     void eachUserTypeCanChangeOwnName() {
         WardUser ward = new WardUser(
-            "ward", "기존 이름", "ward@test.com", "pw", UserType.WARD);
+            "ward", "기존 이름", "ward@test.com", "pw", LocalDate.of(1990, 1, 1), UserType.WARD);
         GuardUser guardian = new GuardUser(
-            "guard", "기존 이름", "guard@test.com", "pw", UserType.GUARDIAN);
+            "guard", "기존 이름", "guard@test.com", "pw", LocalDate.of(1990, 1, 1), UserType.GUARDIAN);
         Institution organization = new Institution(
                 "서울병원", "admin@seoul-hospital.test", "seoul-hospital", "pw");
         InstitutionsUser institution = new InstitutionsUser(
-            "institution", "기존 이름", "institution@test.com", "pw",
+            "institution", "기존 이름", "institution@test.com", "pw", LocalDate.of(1990, 1, 1),
             UserType.INSTITUTIONS, organization);
         when(wardUserService.findById("ward")).thenReturn(ward);
         when(guardUserService.findById("guard")).thenReturn(guardian);

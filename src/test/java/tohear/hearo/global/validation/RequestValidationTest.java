@@ -1,5 +1,7 @@
 package tohear.hearo.global.validation;
 
+import java.time.LocalDate;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 import jakarta.validation.Validation;
@@ -35,7 +37,7 @@ class RequestValidationTest {
         request.setPassword(null);
         request.setUserType(null);
 
-        assertThat(validator.validate(request)).hasSize(7);
+        assertThat(validator.validate(request)).hasSize(8);
     }
 
     @Test
@@ -46,6 +48,7 @@ class RequestValidationTest {
         request.setEmail("user@test.com");
         request.setPassword("password");
         request.setCheckPassword("password");
+        request.setBirthDate(LocalDate.of(1990, 1, 1));
         request.setUserType(tohear.hearo.user.auth.domain.UserType.WARD);
 
         assertThat(validator.validate(request))
