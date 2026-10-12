@@ -1,5 +1,6 @@
 package tohear.hearo.care.service;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -54,7 +55,7 @@ class CareServiceTest {
         FindWardToCareRequest request = new FindWardToCareRequest();
         request.setWardUserId("ward");
         Pageable pageable = PageRequest.of(0, 10);
-        WardUser ward = new WardUser("ward-1", "홍길동", "w@test.com", "pw", UserType.WARD);
+        WardUser ward = new WardUser("ward-1", "홍길동", "w@test.com", "pw", LocalDate.of(1990, 1, 1), UserType.WARD);
         when(careRepository.findWardUserToCare("ward", pageable))
             .thenReturn(new PageImpl<>(List.of(ward), pageable, 11));
 
@@ -142,7 +143,7 @@ class CareServiceTest {
         ChangeCareStateRequest request = new ChangeCareStateRequest();
         request.setCareId(7L);
         when(wardRepository.findById("other-ward")).thenReturn(Optional.of(
-            new WardUser("other-ward", "다른 피보호자", "other@test.com", "pw", UserType.WARD)));
+            new WardUser("other-ward", "다른 피보호자", "other@test.com", "pw", LocalDate.of(1990, 1, 1), UserType.WARD)));
         when(careRepository.findByIdAndWardUser_Id(7L, "other-ward")).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.approveCare(principal, request))
@@ -195,7 +196,7 @@ class CareServiceTest {
         WardUser ward = ward();
         GuardUser currentGuard = guard();
         GuardUser newGuard = new GuardUser(
-            "new-guard", "새 보호자", "new@test.com", "pw", UserType.GUARDIAN);
+            "new-guard", "새 보호자", "new@test.com", "pw", LocalDate.of(1990, 1, 1), UserType.GUARDIAN);
         Care currentMainCare = new Care(ward, currentGuard);
         Care newMainCare = new Care(ward, newGuard);
         currentMainCare.approve();
@@ -260,10 +261,10 @@ class CareServiceTest {
     }
 
     private GuardUser guard() {
-        return new GuardUser("guard", "보호자", "g@test.com", "pw", UserType.GUARDIAN);
+        return new GuardUser("guard", "보호자", "g@test.com", "pw", LocalDate.of(1990, 1, 1), UserType.GUARDIAN);
     }
 
     private WardUser ward() {
-        return new WardUser("ward", "피보호자", "w@test.com", "pw", UserType.WARD);
+        return new WardUser("ward", "피보호자", "w@test.com", "pw", LocalDate.of(1990, 1, 1), UserType.WARD);
     }
 }

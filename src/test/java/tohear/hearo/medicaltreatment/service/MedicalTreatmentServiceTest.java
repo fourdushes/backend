@@ -1,5 +1,6 @@
 package tohear.hearo.medicaltreatment.service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -444,12 +445,12 @@ class MedicalTreatmentServiceTest {
     }
 
     private WardUser ward() {
-        return new WardUser("ward", "환자", "ward@test.com", "pw", UserType.WARD);
+        return new WardUser("ward", "환자", "ward@test.com", "pw", LocalDate.of(1990, 1, 1), UserType.WARD);
     }
 
     private InstitutionsUser doctor() {
         return new InstitutionsUser(
-                "doctor", "의사", "doctor@test.com", "pw", UserType.INSTITUTIONS,
+                "doctor", "의사", "doctor@test.com", "pw", LocalDate.of(1990, 1, 1), UserType.INSTITUTIONS,
                 new Institution("서울병원", "admin@seoul-hospital.test", "seoul-hospital", "pw"));
     }
 
